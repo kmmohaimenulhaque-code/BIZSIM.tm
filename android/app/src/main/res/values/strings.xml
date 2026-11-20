@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BIZSIM</string>
+    <string name="title_activity_main">BIZSIM</string>
+    <string name="package_name">org.bizsim.app</string>
+    <string name="custom_url_scheme">org.bizsim.app</string>
+</resources>
