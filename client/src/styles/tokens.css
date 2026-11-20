@@ -1,0 +1,139 @@
+/* BIZSIM design tokens. One type family, a 4px spacing grid, three radii,
+   four surface levels. Dark is the primary theme; light is a full peer. */
+
+:root {
+  --font: 'Inter Variable', 'Neue Haas Grotesk Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-features: 'cv11', 'ss01', 'ss03';
+
+  /* Type scale (px) */
+  --t-11: 0.6875rem;
+  --t-12: 0.75rem;
+  --t-13: 0.8125rem;
+  --t-14: 0.875rem;
+  --t-16: 1rem;
+  --t-18: 1.125rem;
+  --t-22: 1.375rem;
+  --t-28: 1.75rem;
+  --t-36: 2.25rem;
+  --t-display: clamp(2.125rem, 1.3rem + 2.8vw, 3.75rem);
+
+  /* Spacing (4px grid) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  /* Radius: small for controls, medium for cards, large for floating surfaces */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --d-fast: 150ms;
+  --d-base: 220ms;
+  --d-slow: 300ms;
+
+  /* Layout */
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --content-max: 1360px;
+  --measure: 68ch;
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  /* Graphite & champagne gold */
+  --bg: #0b0c0e;
+  --bg-2: #0f1013;
+  --surface: rgba(28, 29, 33, 0.62);
+  --surface-2: rgba(32, 33, 38, 0.86);
+  --surface-3: rgba(255, 246, 228, 0.055);
+  --surface-solid: #16171b;
+  --text: #f5f1e9;
+  --text-2: #b7b0a4;
+  --text-3: #958e82; /* muted text: AA on the graphite background */
+  --text-4: #6c675f; /* decorative only */
+  --border: rgba(255, 236, 200, 0.085);
+  --border-strong: rgba(255, 236, 200, 0.17);
+  --glass: rgba(255, 244, 222, 0.045);
+  --glass-strong: rgba(13, 14, 17, 0.68);
+  --glass-border: rgba(255, 236, 200, 0.12);
+  --accent: #c9a86a;
+  --accent-hover: #d8bb83;
+  --accent-press: #b5925a;
+  --accent-text: #e4ca94;
+  --accent-soft: rgba(201, 168, 106, 0.14);
+  --accent-ring: rgba(214, 183, 122, 0.6);
+  --on-accent: #17120a;
+  --gold-1: #f0dbab;
+  --gold-2: #c9a86a;
+  --gold-3: #97743f;
+  --gold-grad: linear-gradient(135deg, #efd8a6 0%, #cdab6c 46%, #a37f47 100%);
+  --gold-glow: 0 0 0 1px rgba(214, 183, 122, 0.32), 0 0 22px -4px rgba(214, 183, 122, 0.45);
+  --success: #5fc08c;
+  --success-soft: rgba(95, 192, 140, 0.13);
+  --warning: #e39d55;
+  --warning-soft: rgba(227, 157, 85, 0.13);
+  --danger: #e6705f;
+  --danger-soft: rgba(230, 112, 95, 0.13);
+  --ai: #b9a3ff;
+  --ai-soft: rgba(185, 163, 255, 0.13);
+  --shadow-1: inset 0 1px 0 rgba(255, 248, 232, 0.05), 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -22px rgba(0, 0, 0, 0.8);
+  --shadow-float: 0 30px 70px -24px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 248, 232, 0.06);
+  --image-filter: grayscale(1) sepia(0.18) contrast(1.06) brightness(0.8);
+  --page-glow: radial-gradient(1100px 680px at 8% -12%, rgba(201, 168, 106, 0.13), transparent 62%),
+    radial-gradient(900px 620px at 102% -6%, rgba(132, 146, 176, 0.08), transparent 60%),
+    radial-gradient(1000px 760px at 72% 112%, rgba(201, 168, 106, 0.07), transparent 62%);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  /* Ivory & antique gold */
+  --bg: #f4f1ea;
+  --bg-2: #efebe2;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-2: rgba(255, 255, 255, 0.9);
+  --surface-3: rgba(40, 30, 10, 0.045);
+  --surface-solid: #ffffff;
+  --text: #17140f;
+  --text-2: #4d483e;
+  --text-3: #665f53;
+  --text-4: #978f81;
+  --border: rgba(60, 44, 14, 0.11);
+  --border-strong: rgba(60, 44, 14, 0.2);
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(250, 248, 243, 0.78);
+  --glass-border: rgba(60, 44, 14, 0.12);
+  --accent: #b38a48;
+  --accent-hover: #a17a3c;
+  --accent-press: #8e6a31;
+  --accent-text: #80602a;
+  --accent-soft: rgba(179, 138, 72, 0.13);
+  --accent-ring: rgba(160, 120, 56, 0.5);
+  --on-accent: #1a1409;
+  --gold-1: #dcbb7e;
+  --gold-2: #b38a48;
+  --gold-3: #7c5a26;
+  --gold-grad: linear-gradient(135deg, #ead2a0 0%, #c9a364 48%, #a17a3e 100%);
+  --gold-glow: 0 0 0 1px rgba(160, 120, 56, 0.3), 0 0 20px -6px rgba(160, 120, 56, 0.4);
+  --success: #23865a;
+  --success-soft: rgba(35, 134, 90, 0.1);
+  --warning: #a8611a;
+  --warning-soft: rgba(168, 97, 26, 0.1);
+  --danger: #c2413a;
+  --danger-soft: rgba(194, 65, 58, 0.1);
+  --ai: #6f4ad6;
+  --ai-soft: rgba(111, 74, 214, 0.1);
+  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(40, 30, 10, 0.06), 0 12px 30px -22px rgba(40, 30, 10, 0.3);
+  --shadow-float: 0 26px 64px -26px rgba(40, 30, 10, 0.32), 0 2px 8px rgba(40, 30, 10, 0.08);
+  --image-filter: grayscale(1) sepia(0.12) contrast(1.02) brightness(1.02);
+  --page-glow: radial-gradient(1100px 680px at 8% -12%, rgba(201, 168, 106, 0.2), transparent 62%),
+    radial-gradient(1000px 760px at 80% 112%, rgba(201, 168, 106, 0.12), transparent 62%);
+}
