@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome status-bar icon for BIZSIM notifications: a framed "B" mark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4,3h16a1,1 0,0 1,1 1v16a1,1 0,0 1,-1 1H4a1,1 0,0 1,-1 -1V4a1,1 0,0 1,1 -1zM5,5v14h14V5H5zM8,7h5a3,3 0,0 1,2.1 5.1A3,3 0,0 1,13.5 17H8V7zM10,9v2.2h3a1.1,1.1 0,0 0,0 -2.2h-3zM10,13v2h3.5a1,1 0,0 0,0 -2H10z" />
+</vector>
