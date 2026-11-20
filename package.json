@@ -1,0 +1,174 @@
+{
+  "name": "bizsim",
+  "version": "1.6.0",
+  "description": "BIZSIM: open-source business case simulation and strategic decision-making platform.",
+  "license": "MIT",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "author": "BIZSIM contributors",
+  "homepage": "./",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "node --watch server/src/index.js",
+    "dev:client": "vite --config client/vite.config.js",
+    "build": "vite build --config client/vite.config.js",
+    "start": "NODE_ENV=production node server/src/index.js",
+    "check": "node scripts/validate-content.mjs",
+    "desktop": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:android": "npm run build && npx cap sync android && npx cap open android",
+    "mobile:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "test": "node --test tests/*.test.mjs",
+    "check:sources": "node scripts/check-sources.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "jsonrepair": "^3.15.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.1.9",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.7",
+    "@capacitor/share": "^7.0.4",
+    "@fontsource-variable/inter": "^5.2.5",
+    "@mintplex-labs/piper-tts-web": "^1.0.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^45.3.4",
+    "electron-builder": "^26.18.0",
+    "fflate": "^0.8.3",
+    "jspdf": "^4.2.1",
+    "jsqr": "^1.4.0",
+    "lucide-react": "^0.468.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "vite": "^5.4.11"
+  },
+  "build": {
+    "appId": "org.bizsim.app",
+    "productName": "BIZSIM",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**",
+      "server/src/**",
+      "shared/**",
+      "client/dist/**",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "pkg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "client/public/icons/icon-1024.png",
+      "identity": null,
+      "artifactName": "BIZSIM-${version}-mac-${arch}.${ext}",
+      "extendInfo": {
+        "NSCameraUsageDescription": "BIZSIM uses the camera to scan QR codes when you move progress between devices."
+      },
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "client/public/icons/icon-512.png",
+      "signAndEditExecutable": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "category": "Education",
+      "icon": "client/public/icons/icon-512.png",
+      "artifactName": "BIZSIM-${version}-linux-${arch}.${ext}",
+      "maintainer": "BIZSIM contributors <noreply@bizsim.app>",
+      "synopsis": "Business case simulation and strategic decision-making"
+    },
+    "publish": null,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BIZSIM",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "BIZSIM-Setup-${version}-windows-x64.${ext}"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0"
+      ]
+    },
+    "pkg": {
+      "allowAnywhere": true,
+      "allowCurrentUserHome": true,
+      "allowRootDirectory": true,
+      "isRelocatable": false,
+      "installLocation": "/Applications",
+      "artifactName": "BIZSIM-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "BIZSIM-${version}-mac-${arch}.${ext}"
+    },
+    "fileAssociations": [
+      {
+        "ext": "bizsim",
+        "name": "BIZSIM season",
+        "description": "BIZSIM season package",
+        "mimeType": "application/vnd.bizsim+json",
+        "role": "Viewer"
+      }
+    ]
+  }
+}

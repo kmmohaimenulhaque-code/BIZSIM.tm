@@ -1,0 +1,40 @@
+# Dependencies and build output
+node_modules/
+client/dist/
+release/
+.cache/
+
+# Local data and secrets: never commit
+server/data/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+keystore.properties
+local.properties
+
+# Android: keep the project, ignore generated files
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/capacitor-cordova-android-plugins/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+android/.idea/
+*.apk
+*.aab
+
+# iOS: keep the project, ignore generated files
+ios/App/App/public/
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+
+.DS_Store
+*.log
