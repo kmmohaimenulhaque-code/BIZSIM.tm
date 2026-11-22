@@ -3,6 +3,7 @@
 // nothing, so the file is written to the app's cache and handed to the system
 // share sheet, where the user can save it to Files or Drive, or send it.
 import { isNativeApp } from './api.js';
+import { t } from '../i18n/index.js';
 
 const toBase64 = (bytes) => {
   let s = '';
@@ -19,7 +20,7 @@ export async function saveFile(name, text, mime = 'application/json') {
     const { Share } = await import('@capacitor/share');
     const res = await Filesystem.writeFile(binary ? { path: safeName, data: toBase64(text), directory: Directory.Cache, recursive: true } : { path: safeName, data: text, directory: Directory.Cache, encoding: Encoding.UTF8, recursive: true });
     try {
-      await Share.share({ title: safeName, dialogTitle: 'Save or send', files: [res.uri] });
+      await Share.share({ title: safeName, dialogTitle: t('files.saveOrSend'), files: [res.uri] });
     } catch (e) {
       // Closing the share sheet is not an error.
       if (!/cancel/i.test(String(e?.message || e))) throw e;
@@ -56,7 +57,7 @@ export async function shareFile(name, text, mime = 'application/json') {
 
 /** Read a user-chosen file as text with a size limit. */
 export async function readFileText(file, maxBytes) {
-  if (!file) throw new Error('No file chosen.');
-  if (file.size > maxBytes) throw new Error(`That file is too large (${Math.round(file.size / 1024)} KB). The limit is ${Math.round(maxBytes / 1024)} KB.`);
+  if (!file) throw new Error(t('files.noFile'));
+  if (file.size > maxBytes) throw new Error(t('files.tooLarge', { size: Math.round(file.size / 1024), limit: Math.round(maxBytes / 1024) }));
   return file.text();
 }

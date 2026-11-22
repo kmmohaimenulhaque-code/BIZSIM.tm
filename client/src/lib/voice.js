@@ -6,6 +6,7 @@
 // (very old browser), a system male voice is used instead.
 import { useSyncExternalStore } from 'react';
 import ortWasmUrl from '../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
+import { t } from '../i18n/index.js';
 
 export const VOICES = [
   { id: 'en_US-john-medium', name: 'John', note: 'US English · public-domain recordings (LibriVox)' },
@@ -104,7 +105,7 @@ function playBlob(blob, id) {
     };
     audio.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Audio playback failed'));
+      reject(new Error(t('voice.playbackFailed')));
     };
     audio.play().catch(reject);
   });
@@ -118,7 +119,7 @@ function systemVoice() {
 
 function speakSystem(chunks, id) {
   return new Promise((resolve, reject) => {
-    if (!window.speechSynthesis) return reject(new Error('No speech engine available on this device'));
+    if (!window.speechSynthesis) return reject(new Error(t('voice.noEngine')));
     set({ engine: 'system', status: 'playing' });
     let i = 0;
     const next = () => {
@@ -169,7 +170,7 @@ export async function speak(text, owner) {
     }
     set({ status: 'idle', owner: null, part: 0 });
   } catch (e) {
-    if (id === runId) set({ status: 'error', error: e.message || 'Voice reader failed' });
+    if (id === runId) set({ status: 'error', error: e.message || t('voice.failed') });
   }
 }
 

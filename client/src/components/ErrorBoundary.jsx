@@ -3,6 +3,7 @@
 import { Component } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
+import { t } from '../i18n/index.js';
 
 class Boundary extends Component {
   constructor(props) {
@@ -25,20 +26,18 @@ class Boundary extends Component {
     return (
       <div className="panel panel-pad stack gap-3" role="alert" style={{ maxWidth: 620 }}>
         <h2 className="section-title row gap-2">
-          <AlertTriangle size={18} aria-hidden="true" /> This screen could not be shown
+          <AlertTriangle size={18} aria-hidden="true" /> {t('errors.screenTitle')}
         </h2>
         <p className="muted">
-          {chunk
-            ? 'Part of the app could not be loaded. This usually happens right after an update or when the connection drops. Reloading fixes it.'
-            : 'Something went wrong while drawing this screen. Your progress and saved seasons are safe.'}
+          {chunk ? t('errors.chunk') : t('errors.render')}
         </p>
         <pre className="meta" style={{ whiteSpace: 'pre-wrap', margin: 0, maxHeight: 120, overflow: 'auto' }}>{String(error?.message || error).slice(0, 400)}</pre>
         <div className="row gap-2 wrap">
           <button type="button" className="btn btn-primary" onClick={() => (chunk ? window.location.reload() : this.setState({ error: null }))}>
-            <RotateCcw aria-hidden="true" /> {chunk ? 'Reload' : 'Try again'}
+            <RotateCcw aria-hidden="true" /> {chunk ? t('errors.reload') : t('common.retry')}
           </button>
           <a className="btn" href={window.location.protocol === 'file:' || window.Capacitor?.isNativePlatform?.() ? '#/' : '/'}>
-            <Home aria-hidden="true" /> Overview
+            <Home aria-hidden="true" /> {t('navigation.overview')}
           </a>
         </div>
       </div>

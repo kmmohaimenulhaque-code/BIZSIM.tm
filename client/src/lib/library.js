@@ -3,8 +3,10 @@
 import { useMemo } from 'react';
 import { BOOKS, PRINCIPLES } from '@shared/books.js';
 import { useStore, getState } from './store.js';
+import { t } from '../i18n/index.js';
 
-const NO_BOOK = { id: '', title: 'My notes', author: 'You', year: 0, theme: 'My library', custom: true };
+// Placeholder "book" for the user's own principles, in the interface language.
+const noBook = () => ({ id: '', title: t('library.myNotes'), author: t('library.you'), year: 0, theme: t('library.myLibrary'), custom: true });
 
 function build(library) {
   const l = library || {};
@@ -16,7 +18,7 @@ function build(library) {
     principles,
     bookById,
     principleById: Object.fromEntries(principles.map((p) => [p.id, p])),
-    bookOf: (p) => bookById[p?.book] || NO_BOOK,
+    bookOf: (p) => bookById[p?.book] || noBook(),
     tags: l.tags || {},
     customBooks: l.books || [],
     customPrinciples: l.principles || [],

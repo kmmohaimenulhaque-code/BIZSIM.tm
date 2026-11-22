@@ -9,6 +9,7 @@ import { planNotifications, allowNow, DEFAULT_SETTINGS } from '@shared/notifyPla
 import { CASES } from '@shared/cases/index.js';
 import { getState, setState, useStore, subscribe } from './store.js';
 import { isNativeApp } from './api.js';
+import { t, i18n } from '../i18n/index.js';
 
 const PLAN_KEY = 'bizsim.notifyPlan';
 const TZ_KEY = 'bizsim.notifyTz';
@@ -109,7 +110,7 @@ function context(now = new Date()) {
     .filter(Boolean);
   const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
   const completedThisWeek = (s.runs || []).filter((r) => r.finishedAt && new Date(r.finishedAt) >= monday).length;
-  return { now, curatedIds: CURATED_IDS, titleOf: (id) => TITLE[id] || 'A new season', unfinished, completedThisWeek };
+  return { now, curatedIds: CURATED_IDS, titleOf: (id) => TITLE[id] || t('notify.newSeason'), unfinished, completedThisWeek, t: (key, vars) => t(key, vars) };
 }
 
 /** Move planned notifications whose time has passed into the inbox (catch-up after the app was closed). */
@@ -255,7 +256,7 @@ export async function initNotifications() {
     for (const r of s.runs || []) {
       if (r.finishedAt && !finished.has(r.id)) {
         const c = CASES.find((x) => x.id === r.caseId) || (s.myCases || []).find((x) => x.id === r.caseId);
-        if (c) notifyEvent('seasonDone', { key: `done|${r.id}`, title: 'Season completed', body: `You finished “${c.title}”. See how your calls compare in your learning profile.`, link: '/learning' });
+        if (c) notifyEvent('seasonDone', { key: `done|${r.id}`, title: t('notify.seasonDoneTitle'), body: t('notify.seasonDoneBody', { title: c.title }), link: '/learning' });
       }
     }
     finished = new Set((s.runs || []).filter((r) => r.finishedAt).map((r) => r.id));
@@ -281,6 +282,10 @@ export async function initNotifications() {
     }
   }
   if (notifySettings().enabled) reschedule();
+  // Scheduled notifications carry their text, so rewrite them in the new language.
+  i18n.on('languageChanged', () => {
+    if (notifySettings().enabled) reschedule();
+  });
   timer = setInterval(tick, 60_000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) tick();

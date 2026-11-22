@@ -138,6 +138,38 @@ ipcMain.handle('bizsim:open-folder', (e, p) => {
   return shell.openPath(p);
 });
 
+// ---------- Reports: HTML to PDF ----------
+// The page sends a self-contained report (text escaped, fonts as data URLs).
+// It is printed in a hidden window with JavaScript off and every network
+// request blocked, so the HTML can only ever be laid out, never run.
+let pdfSessionReady = false;
+ipcMain.handle('bizsim:html-to-pdf', async (e, html) => {
+  if (!win || e.sender !== win.webContents) throw new Error('Not allowed');
+  if (typeof html !== 'string' || html.length > 12_000_000) throw new Error('Report too large');
+  const os = require('node:os');
+  const crypto = require('node:crypto');
+  const file = path.join(os.tmpdir(), `bizsim-report-${crypto.randomBytes(8).toString('hex')}.html`);
+  fs.writeFileSync(file, html, 'utf8');
+  const partition = 'bizsim-report';
+  if (!pdfSessionReady) {
+    const ses = session.fromPartition(partition);
+    ses.webRequest.onBeforeRequest((d, cb) => cb({ cancel: !(d.url.startsWith('data:') || (d.url.startsWith('file:') && /bizsim-report-[a-f0-9]{16}\.html$/.test(d.url))) }));
+    ses.setPermissionRequestHandler((_wc, _p, cb) => cb(false));
+    pdfSessionReady = true;
+  }
+  const pdfWin = new BrowserWindow({ show: false, webPreferences: { javascript: false, sandbox: true, contextIsolation: true, nodeIntegration: false, partition } });
+  pdfWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  pdfWin.webContents.on('will-navigate', (ev) => ev.preventDefault());
+  try {
+    await pdfWin.loadFile(file);
+    const buf = await pdfWin.webContents.printToPDF({ pageSize: 'A4', printBackground: true });
+    return new Uint8Array(buf);
+  } finally {
+    pdfWin.destroy();
+    fs.rm(file, { force: true }, () => {});
+  }
+});
+
 // ---------- Window ----------
 async function createWindow() {
   const userData = app.getPath('userData');

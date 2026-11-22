@@ -92,9 +92,9 @@ export function sanitizeInbox(v) {
  */
 export function sanitizeState(parsed, { kind } = {}) {
   const report = { runs: 0, cases: 0, companies: 0, collections: 0, dropped: 0, droppedCases: [] };
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ok: false, error: 'This file is not BIZSIM data.', report };
-  if (parsed.app !== 'BIZSIM') return { ok: false, error: 'This file is not BIZSIM data.', report };
-  if (parsed.version !== 1) return { ok: false, error: `This file uses data format ${String(parsed.version).slice(0, 10)}, which this version of BIZSIM cannot read. Update the app.`, report };
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { ok: false, code: 'notBizsim', error: 'This file is not BIZSIM data.', report };
+  if (parsed.app !== 'BIZSIM') return { ok: false, code: 'notBizsim', error: 'This file is not BIZSIM data.', report };
+  if (parsed.version !== 1) return { ok: false, code: 'version', version: String(parsed.version).slice(0, 10), error: `This file uses data format ${String(parsed.version).slice(0, 10)}, which this version of BIZSIM cannot read. Update the app.`, report };
 
   const profileIn = parsed.profile && typeof parsed.profile === 'object' ? parsed.profile : {};
   const dims = Object.fromEntries(DIMENSION_IDS.map((d) => [d, num(profileIn.dims?.[d], -100, 100, 0)]));

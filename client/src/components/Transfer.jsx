@@ -16,6 +16,8 @@ import { Button, Callout, Dialog, toast } from './ui.jsx';
 import { transferPayload, mergeState } from '../lib/store.js';
 import { getShare, setShare, newShareCode, revokeShareDevice, pairFromUrl, parsePairLink, pairing, unpair } from '../lib/api.js';
 import { refreshStatus } from '../lib/useStatus.js';
+import { useTranslation, Trans, t } from '../i18n/index.js';
+import { formatInteger, formatList, formatRelative, formatDate } from '../i18n/format.js';
 
 const PREFIX = 'BZS1';
 export const CHUNK = 300;
@@ -76,12 +78,14 @@ export function readQr(canvas, source, sw, sh) {
   return null;
 }
 
-function cameraProblem(e) {
-  if (!navigator.mediaDevices?.getUserMedia) return 'This device or browser does not give BIZSIM camera access here. Use a photo or the transfer code below.';
-  if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') return 'Camera permission was denied. Allow camera access for BIZSIM in the phone settings, or use a photo or the transfer code below.';
-  if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') return 'No usable camera was found. Use a photo or the transfer code below.';
-  if (e?.name === 'NotReadableError') return 'The camera is being used by another app. Close it and try again.';
-  return `Camera unavailable (${e?.message || 'unknown error'}). Use a photo or the transfer code below.`;
+// short: without the "use a photo or the transfer code" hint (for the pairing dialog).
+function cameraProblem(e, short = false) {
+  const s = short ? 'Short' : '';
+  if (!navigator.mediaDevices?.getUserMedia) return t(`transfer.cam.noApi${s}`);
+  if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') return t(`transfer.cam.denied${s}`);
+  if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') return t(`transfer.cam.notFound${s}`);
+  if (e?.name === 'NotReadableError') return t('transfer.cam.busy');
+  return t(`transfer.cam.other${s}`, { message: e?.message || t('transfer.cam.unknown') });
 }
 
 async function openCamera() {
@@ -99,20 +103,23 @@ function summary(p) {
   const lib = p.library || {};
   const own = (lib.principles || []).length + (lib.books || []).length;
   const tagged = Object.keys(lib.tags || {}).length;
-  return `${decisions} decisions, ${(p.myCases || []).length} cases, ${(p.savedCompanies || []).length} saved companies${own ? `, ${own} library items` : ''}${tagged ? `, ${tagged} tagged seasons` : ''}`;
+  const parts = [t('transfer.summary.decisions', { count: decisions }), t('transfer.summary.cases', { count: (p.myCases || []).length }), t('transfer.summary.companies', { count: (p.savedCompanies || []).length })];
+  if (own) parts.push(t('transfer.summary.library', { count: own }));
+  if (tagged) parts.push(t('transfer.summary.tagged', { count: tagged }));
+  return formatList(parts);
 }
 
 function decodeProgressSync(code) {
   const kind = code[0];
-  if (kind !== 'G' && kind !== 'J') throw new Error('This is not a BIZSIM transfer code.');
+  if (kind !== 'G' && kind !== 'J') throw new Error(t('transfer.notCode'));
   let obj;
   try {
     const bytes = fromB64url(code.slice(1));
     obj = JSON.parse(kind === 'G' ? strFromU8(gunzipSync(bytes)) : strFromU8(bytes));
   } catch {
-    throw new Error('The transfer code is incomplete or damaged.');
+    throw new Error(t('transfer.damaged'));
   }
-  if (!obj || typeof obj !== 'object') throw new Error('The transfer code holds no BIZSIM data.');
+  if (!obj || typeof obj !== 'object') throw new Error(t('transfer.empty'));
   return obj;
 }
 const readyState = (v) => v.readyState >= 2;
@@ -144,6 +151,7 @@ export async function loadImage(file) {
 
 // ---------- sender ----------
 function SendDialog({ onClose }) {
+  useTranslation();
   const [includeCases, setIncludeCases] = useState(true);
   const [frames, setFrames] = useState([]);
   const [code, setCode] = useState('');
@@ -178,8 +186,8 @@ function SendDialog({ onClose }) {
 
   useEffect(() => {
     if (frames.length < 2 || paused) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % frames.length), CYCLE_MS);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setIdx((i) => (i + 1) % frames.length), CYCLE_MS);
+    return () => clearInterval(timer);
   }, [frames, paused]);
 
   const step = (d) => {
@@ -188,28 +196,28 @@ function SendDialog({ onClose }) {
   };
 
   return (
-    <Dialog title="Send progress to another device" onClose={onClose}>
+    <Dialog title={t('transfer.send.title')} onClose={onClose}>
       <p className="muted">
-        On the other device open BIZSIM, Settings, <strong>Receive progress</strong>, and point the camera at this screen. Turn the brightness up and keep both devices steady until every code is captured.
+        <Trans i18nKey="transfer.send.intro" components={{ strong: <strong /> }} />
       </p>
-      {error && <Callout tone="warning">Could not prepare the codes: {error}</Callout>}
-      <div className="qr-frame qr-white">{frames[idx] ? <img src={frames[idx]} alt={`Transfer QR code ${idx + 1} of ${frames.length}`} /> : <div className="skeleton" style={{ width: 280, height: 280 }} />}</div>
+      {error && <Callout tone="warning">{t('transfer.send.prepFailed', { error })}</Callout>}
+      <div className="qr-frame qr-white">{frames[idx] ? <img src={frames[idx]} alt={t('transfer.send.qrAlt', { i: formatInteger(idx + 1), n: formatInteger(frames.length) })} /> : <div className="skeleton" style={{ width: 280, height: 280 }} />}</div>
       {frames.length > 1 && (
-        <div className="row center gap-2">
-          <Button size="sm" variant="ghost" icon={ChevronLeft} aria-label="Previous code" onClick={() => step(-1)} />
+        <div className="row center gap-2" dir="ltr">
+          <Button size="sm" variant="ghost" icon={ChevronLeft} aria-label={t('transfer.send.prev')} onClick={() => step(-1)} />
           <Button size="sm" icon={paused ? Play : Pause} onClick={() => setPaused(!paused)}>
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? t('transfer.send.resume') : t('transfer.send.pause')}
           </Button>
-          <Button size="sm" variant="ghost" icon={ChevronRight} aria-label="Next code" onClick={() => step(1)} />
+          <Button size="sm" variant="ghost" icon={ChevronRight} aria-label={t('transfer.send.next')} onClick={() => step(1)} />
         </div>
       )}
       <div className="row between wrap gap-2 meta num">
-        <span>{frames.length > 1 ? `Code ${idx + 1} of ${frames.length}${paused ? ' (paused)' : ', cycling automatically'}` : 'Single code'}</span>
+        <span>{frames.length > 1 ? t(paused ? 'transfer.send.codeOfPaused' : 'transfer.send.codeOf', { i: formatInteger(idx + 1), n: formatInteger(frames.length) }) : t('transfer.send.single')}</span>
         <span>{summary(payload)}</span>
       </div>
       <label className="row gap-2" style={{ cursor: 'pointer' }}>
         <input type="checkbox" checked={includeCases} onChange={(e) => setIncludeCases(e.target.checked)} />
-        <span>Include generated and built cases (more codes)</span>
+        <span>{t('transfer.send.includeCases')}</span>
       </label>
       <div className="row wrap gap-2">
         <Button
@@ -218,22 +226,23 @@ function SendDialog({ onClose }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(code);
-              toast('Transfer code copied. Paste it on the other device.');
+              toast(t('transfer.send.copied'));
             } catch {
-              toast('Copy is blocked here. Use the QR codes instead.', 'error');
+              toast(t('transfer.send.copyBlocked'), 'error');
             }
           }}
         >
-          Copy transfer code
+          {t('transfer.send.copy')}
         </Button>
       </div>
-      <p className="meta">Nothing is uploaded. Codes contain only your BIZSIM progress and library, compressed.</p>
+      <p className="meta">{t('transfer.send.privacy')}</p>
     </Dialog>
   );
 }
 
 // ---------- receiver ----------
 function ReceiveDialog({ onClose }) {
+  useTranslation();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const partsRef = useRef({ sid: null, n: 0, got: new Map() });
@@ -249,12 +258,12 @@ function ReceiveDialog({ onClose }) {
       mergeState(p);
       setDone(summary(p));
       setScanning(false);
-      toast('Progress received and merged');
+      toast(t('transfer.receive.merged'));
       return true;
     } catch (e) {
       partsRef.current = { sid: null, n: 0, got: new Map() };
       setCount({ got: 0, n: 0 });
-      toast(`${e.message} Try again.`, 'error');
+      toast(t('transfer.receive.tryAgain', { message: e.message }), 'error');
       return false;
     }
   };
@@ -266,8 +275,8 @@ function ReceiveDialog({ onClose }) {
     if (text.startsWith(`${PREFIX}:`)) return finish(text.slice(PREFIX.length + 1));
     const f = parseFrame(text);
     if (!f) {
-      if (/^https?:\/\/.*[#?&]pair=/.test(text)) warnOnce('That is a pairing code. Use Connect to a computer for it.');
-      else if (text.startsWith('BZP1|')) warnOnce('That is a shared season. Use Import a season (in My cases or Settings) for it.');
+      if (/^https?:\/\/.*[#?&]pair=/.test(text)) warnOnce(t('transfer.receive.isPairing'));
+      else if (text.startsWith('BZP1|')) warnOnce(t('transfer.receive.isSeason'));
       return false;
     }
     if (partsRef.current.sid !== f.sid || partsRef.current.n !== f.n) partsRef.current = { sid: f.sid, n: f.n, got: new Map() };
@@ -288,7 +297,7 @@ function ReceiveDialog({ onClose }) {
     (async () => {
       try {
         stream = await openCamera();
-        if (stopped) return stream.getTracks().forEach((t) => t.stop());
+        if (stopped) return stream.getTracks().forEach((tr) => tr.stop());
         const v = videoRef.current;
         v.srcObject = stream;
         await v.play().catch(() => {});
@@ -313,7 +322,7 @@ function ReceiveDialog({ onClose }) {
     return () => {
       stopped = true;
       clearTimeout(timer);
-      stream?.getTracks().forEach((t) => t.stop());
+      stream?.getTracks().forEach((tr) => tr.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning]);
@@ -325,50 +334,50 @@ function ReceiveDialog({ onClose }) {
         const src = await loadImage(file);
         const text = readQr(canvasRef.current, src, src.width, src.height);
         if (!text) {
-          toast(`No QR code found in ${file.name}`, 'error');
+          toast(t('transfer.receive.noQr', { name: file.name }), 'error');
           continue;
         }
         found++;
         if (accept(text)) return;
       } catch {
-        toast(`Could not open ${file.name}`, 'error');
+        toast(t('transfer.receive.cantOpen', { name: file.name }), 'error');
       }
     }
-    if (found && partsRef.current.n) toast(`${partsRef.current.got.size} of ${partsRef.current.n} codes captured. Add the rest.`);
+    if (found && partsRef.current.n) toast(t('transfer.receive.partial', { got: formatInteger(partsRef.current.got.size), n: formatInteger(partsRef.current.n) }));
   };
 
   return (
-    <Dialog title="Receive progress" onClose={onClose}>
+    <Dialog title={t('transfer.receive.title')} onClose={onClose}>
       {done ? (
-        <Callout icon={Check}>
-          Merged into this device: {done}. Nothing on this device was deleted.
-        </Callout>
+        <Callout icon={Check}>{t('transfer.receive.done', { summary: done })}</Callout>
       ) : (
         <>
-          <p className="muted">On the other device open Settings → <strong>Send progress</strong>, then scan the moving QR codes here.</p>
+          <p className="muted">
+            <Trans i18nKey="transfer.receive.intro" components={{ strong: <strong /> }} />
+          </p>
           {scanning ? (
             <div className="scan-wrap">
-              <video ref={videoRef} className="scan-video" playsInline muted autoPlay aria-label="Camera preview" />
+              <video ref={videoRef} className="scan-video" playsInline muted autoPlay aria-label={t('transfer.cam.preview')} />
               <span className="scan-target" aria-hidden="true" />
               <Button size="sm" className="scan-stop" onClick={() => setScanning(false)}>
-                Stop
+                {t('transfer.receive.stop')}
               </Button>
             </div>
           ) : (
             <Button variant="primary" size="lg" icon={ScanLine} onClick={() => { setCamError(null); setScanning(true); }}>
-              Scan with camera
+              {t('transfer.receive.scan')}
             </Button>
           )}
           {count.n > 0 && (
             <div className="stack gap-2">
               <div className="row between meta num">
-                <span>Codes captured</span>
-                <span>
-                  {count.got} / {count.n}
+                <span>{t('transfer.receive.captured')}</span>
+                <span dir="ltr">
+                  {formatInteger(count.got)} / {formatInteger(count.n)}
                 </span>
               </div>
-              {count.missing?.length > 0 && count.missing.length <= 12 && <span className="meta num">Still needed: {count.missing.map((i) => i + 1).join(', ')}</span>}
-              <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={count.n} aria-valuenow={count.got}>
+              {count.missing?.length > 0 && count.missing.length <= 12 && <span className="meta num">{t('transfer.receive.stillNeeded', { list: formatList(count.missing.map((i) => formatInteger(i + 1))) })}</span>}
+              <div className="progress-track" dir="ltr" role="progressbar" aria-valuemin={0} aria-valuemax={count.n} aria-valuenow={count.got}>
                 <div className="progress-fill" style={{ width: `${(100 * count.got) / count.n}%` }} />
               </div>
             </div>
@@ -376,19 +385,19 @@ function ReceiveDialog({ onClose }) {
           {camError && <Callout tone="warning">{camError}</Callout>}
           <div className="row wrap gap-2">
             <label className="btn">
-              <ImageUp aria-hidden="true" /> From photos or screenshots
+              <ImageUp aria-hidden="true" /> {t('transfer.receive.fromPhotos')}
               <input type="file" accept="image/*" multiple hidden onChange={(e) => fromImages([...e.target.files])} />
             </label>
           </div>
           <div className="field">
-            <label htmlFor="paste-code">Or paste a transfer code</label>
-            <textarea id="paste-code" className="input" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="BZS1:…" />
+            <label htmlFor="paste-code">{t('transfer.receive.paste')}</label>
+            <textarea id="paste-code" dir="ltr" className="input" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder="BZS1:…" />
             <Button
               icon={ClipboardPaste}
               disabled={!paste.trim().startsWith(`${PREFIX}:`)}
               onClick={() => accept(paste.trim())}
             >
-              Import code
+              {t('transfer.receive.import')}
             </Button>
           </div>
         </>
@@ -399,25 +408,26 @@ function ReceiveDialog({ onClose }) {
 }
 
 export function TransferPanel() {
+  useTranslation();
   const [mode, setMode] = useState(null);
   return (
     <section className="panel panel-pad stack gap-4" aria-labelledby="tr-h">
       <h2 id="tr-h" className="section-title">
-        Move to another device
+        {t('transfer.panel.title')}
       </h2>
-      <p className="muted">Switching between phone, tablet and computer? Transfer your decisions, profile, saved companies and cases with QR codes, offline, no account. Progress is merged, never overwritten.</p>
+      <p className="muted">{t('transfer.panel.intro')}</p>
       <div className="row wrap gap-2">
         <Button icon={QrCode} onClick={() => setMode('send')}>
-          Send progress
+          {t('transfer.panel.send')}
         </Button>
         <Button icon={ScanLine} onClick={() => setMode('receive')}>
-          Receive progress
+          {t('transfer.panel.receive')}
         </Button>
         <Button variant="ghost" onClick={() => window.dispatchEvent(new CustomEvent('bizsim:import', { detail: { manual: true } }))}>
-          Import a shared season
+          {t('transfer.panel.importSeason')}
         </Button>
       </div>
-      <p className="meta">To share a single season or episode, open it and choose Share.</p>
+      <p className="meta">{t('transfer.panel.single')}</p>
       {mode === 'send' && <SendDialog onClose={() => setMode(null)} />}
       {mode === 'receive' && <ReceiveDialog onClose={() => setMode(null)} />}
     </section>
@@ -437,7 +447,7 @@ export function useCameraScan(active, onText) {
     (async () => {
       try {
         stream = await openCamera();
-        if (stopped) return stream.getTracks().forEach((t) => t.stop());
+        if (stopped) return stream.getTracks().forEach((tr) => tr.stop());
         const v = videoRef.current;
         v.srcObject = stream;
         await v.play().catch(() => {});
@@ -455,13 +465,13 @@ export function useCameraScan(active, onText) {
         };
         tick();
       } catch (e) {
-        setError(cameraProblem(e));
+        setError(cameraProblem(e, true));
       }
     })();
     return () => {
       stopped = true;
       clearTimeout(timer);
-      stream?.getTracks().forEach((t) => t.stop());
+      stream?.getTracks().forEach((tr) => tr.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
@@ -469,6 +479,7 @@ export function useCameraScan(active, onText) {
 }
 
 function PairScanDialog({ onClose }) {
+  useTranslation();
   const [manual, setManual] = useState('');
   const [state, setState] = useState({ phase: 'scan' }); // scan | connecting | done | error
   const connect = (text) => {
@@ -477,53 +488,57 @@ function PairScanDialog({ onClose }) {
       .then((origin) => {
         refreshStatus();
         setState({ phase: 'done', origin });
-        toast('Connected to your computer');
+        toast(t('transfer.pair.connected'));
       })
       .catch((e) => setState({ phase: 'error', error: e.message }));
   };
   const tryPair = (text) => {
-    const t = String(text).trim();
-    if (t.startsWith('BZS1') || t.startsWith('BZP1')) {
-      warnOnce('That is a transfer code, not a pairing code. Use Receive for it.');
+    const v = String(text).trim();
+    if (v.startsWith('BZS1') || v.startsWith('BZP1')) {
+      warnOnce(t('transfer.pair.isTransfer'));
       return false;
     }
     try {
-      parsePairLink(t);
+      parsePairLink(v);
     } catch (e) {
-      if (/older BIZSIM/.test(e.message)) warnOnce(e.message);
+      if (e.code === 'oldCode') warnOnce(e.message);
       return false;
     }
-    connect(t);
+    connect(v);
     return true;
   };
   const { videoRef, canvasRef, error } = useCameraScan(state.phase === 'scan', tryPair);
   return (
-    <Dialog title="Connect to a computer" onClose={onClose}>
+    <Dialog title={t('transfer.pair.title')} onClose={onClose}>
       {state.phase === 'done' ? (
-        <Callout icon={Check}>Connected to BIZSIM at {state.origin}. Live research and case building now run on your computer while both devices are on the same Wi‑Fi. You can remove this device on the computer at any time.</Callout>
+        <Callout icon={Check}>{t('transfer.pair.done', { origin: state.origin })}</Callout>
       ) : state.phase === 'connecting' ? (
-        <p className="muted" role="status">Connecting securely to your computer…</p>
+        <p className="muted" role="status">
+          {t('transfer.pair.connecting')}
+        </p>
       ) : (
         <>
           {state.phase === 'error' && (
             <Callout tone="warning">
               {state.error}{' '}
               <button type="button" className="link-btn" onClick={() => setState({ phase: 'scan' })}>
-                Scan again
+                {t('transfer.pair.scanAgain')}
               </button>
             </Callout>
           )}
-          <p className="muted">On your computer open BIZSIM → Settings → <strong>Use on your phone</strong>, turn it on, and scan the code it shows. Each code works once and expires after five minutes.</p>
+          <p className="muted">
+            <Trans i18nKey="transfer.pair.intro" components={{ strong: <strong /> }} />
+          </p>
           {state.phase === 'scan' && (
             <>
-              <video ref={videoRef} className="scan-video" playsInline muted autoPlay aria-label="Camera preview" />
+              <video ref={videoRef} className="scan-video" playsInline muted autoPlay aria-label={t('transfer.cam.preview')} />
               <canvas ref={canvasRef} hidden />
             </>
           )}
-          {error && <Callout tone="warning">{error.replace('Use a photo or the transfer code below.', '')} Paste the pairing link shown on the computer instead.</Callout>}
+          {error && <Callout tone="warning">{t('transfer.pair.pasteInstead', { problem: error })}</Callout>}
           <div className="field">
-            <label htmlFor="pair-url">Or paste the pairing link</label>
-            <input id="pair-url" className="input" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="http://192.168.1.5:47830/#pair=…" inputMode="url" autoComplete="off" autoCapitalize="off" spellCheck={false} />
+            <label htmlFor="pair-url">{t('transfer.pair.pasteLabel')}</label>
+            <input id="pair-url" dir="ltr" className="input" value={manual} onChange={(e) => setManual(e.target.value)} placeholder={t('transfer.pair.placeholder')} inputMode="url" autoComplete="off" autoCapitalize="off" spellCheck={false} />
             <Button
               disabled={!manual.includes('pair=')}
               onClick={() => {
@@ -535,7 +550,7 @@ function PairScanDialog({ onClose }) {
                 }
               }}
             >
-              Connect
+              {t('transfer.pair.connect')}
             </Button>
           </div>
         </>
@@ -544,26 +559,20 @@ function PairScanDialog({ onClose }) {
   );
 }
 
-const ago = (t) => {
-  const m = Math.round((Date.now() - t) / 60000);
-  if (m < 2) return 'just now';
-  if (m < 60) return `${m} min ago`;
-  const h = Math.round(m / 60);
-  if (h < 48) return `${h} h ago`;
-  return `${Math.round(h / 24)} days ago`;
-};
+const ago = (ms) => formatRelative(ms);
 
 function useCountdown(until) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!until) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, [until]);
   return until ? Math.max(0, Math.round((until - now) / 1000)) : 0;
 }
 
 export function PhonePanel({ status }) {
+  useTranslation();
   const [share, setShareState] = useState(null);
   const [qr, setQr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -577,10 +586,10 @@ export function PhonePanel({ status }) {
     const load = () => getShare().then((s) => !stop && setShareState(s)).catch(() => {});
     load();
     // Keep the device list and code fresh while this panel is open.
-    const t = setInterval(load, 4000);
+    const timer = setInterval(load, 4000);
     return () => {
       stop = true;
-      clearInterval(t);
+      clearInterval(timer);
     };
   }, [status?.desktop]);
   useEffect(() => {
@@ -603,16 +612,16 @@ export function PhonePanel({ status }) {
     return (
       <section className="panel panel-pad stack gap-4" aria-labelledby="ph-h">
         <h2 id="ph-h" className="section-title row gap-2">
-          <Wifi size={16} aria-hidden="true" /> Use on your phone
+          <Wifi size={16} aria-hidden="true" /> {t('transfer.phone.title')}
         </h2>
-        <p className="muted">Let your phone or tablet use this computer’s BIZSIM (live research, case building and your API keys) over the same Wi‑Fi. Each pairing code works once and expires after five minutes. Paired devices sign every request; you can remove them here at any time.</p>
+        <p className="muted">{t('transfer.phone.intro')}</p>
         <div className="row wrap gap-2">
           <Button variant={share?.enabled ? 'default' : 'primary'} icon={Smartphone} loading={busy} onClick={() => act(() => setShare(!share?.enabled))}>
-            {share?.enabled ? 'Turn off phone access' : 'Turn on phone access'}
+            {share?.enabled ? t('transfer.phone.turnOff') : t('transfer.phone.turnOn')}
           </Button>
           {share?.enabled && (
             <Button variant="ghost" disabled={busy} onClick={() => act(newShareCode)}>
-              New code
+              {t('transfer.phone.newCode')}
             </Button>
           )}
         </div>
@@ -620,57 +629,57 @@ export function PhonePanel({ status }) {
           <>
             {share.urls?.length ? (
               <>
-                <div className="qr-frame">{qr && <img src={qr} alt="Pairing QR code for your phone" />}</div>
+                <div className="qr-frame">{qr && <img src={qr} alt={t('transfer.phone.qrAlt')} />}</div>
                 <p className="meta" role="status" aria-live="polite">
-                  {left > 0 ? `Code expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}. A new one appears automatically.` : 'Refreshing the code…'}
+                  {left > 0 ? t('transfer.phone.expires', { time: `${formatInteger(Math.floor(left / 60))}:${String(left % 60).padStart(2, '0')}` }) : t('transfer.phone.refreshing')}
                 </p>
                 <p className="muted">
-                  Scan with the <strong>BIZSIM phone app</strong> (Settings → Connect to a computer), or with the phone’s camera to open BIZSIM in its browser.
+                  <Trans i18nKey="transfer.phone.scanWith" components={{ strong: <strong /> }} />
                 </p>
                 <div>
                   <button type="button" className="link-btn" onClick={() => setShowLink((v) => !v)} aria-expanded={showLink}>
-                    {showLink ? 'Hide pairing link' : 'Show pairing link to copy'}
+                    {showLink ? t('transfer.phone.hideLink') : t('transfer.phone.showLink')}
                   </button>
                   {showLink && (
-                    <ul className="stack gap-1 meta" style={{ margin: 'var(--s2) 0 0', paddingLeft: 'var(--s4)', overflowWrap: 'anywhere' }}>
+                    <ul className="stack gap-1 meta" dir="ltr" style={{ margin: 'var(--s2) 0 0', paddingInlineStart: 'var(--s4)', overflowWrap: 'anywhere' }}>
                       {share.urls.map((u) => (
                         <li key={u}>{u}</li>
                       ))}
                     </ul>
                   )}
                 </div>
-                <p className="meta">If the phone cannot connect, allow BIZSIM through your computer’s firewall when asked. Traffic on your Wi‑Fi is signed but not encrypted, so use phone access on networks you trust.</p>
+                <p className="meta">{t('transfer.phone.firewall')}</p>
               </>
             ) : (
-              <Callout tone="warning">This computer is not connected to a private network (home or office Wi‑Fi).</Callout>
+              <Callout tone="warning">{t('transfer.phone.noNetwork')}</Callout>
             )}
           </>
         )}
         <div className="stack gap-2">
-          <h3 className="section-title" style={{ fontSize: 'var(--t-13)' }}>Paired devices</h3>
+          <h3 className="section-title" style={{ fontSize: 'var(--t-13)' }}>{t('transfer.phone.paired')}</h3>
           {devices.length ? (
             <>
               <ul className="device-list">
                 {devices.map((d) => (
                   <li key={d.fullId} className="row gap-2 between">
                     <span>
-                      <strong>{d.device}</strong>
-                      <span className="meta"> · last used {ago(d.lastSeen)}</span>
+                      <strong dir="auto">{d.device}</strong>
+                      <span className="meta">{t('transfer.phone.lastUsed', { when: ago(d.lastSeen) })}</span>
                     </span>
-                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => act(() => revokeShareDevice(d.fullId))} aria-label={`Remove ${d.device}`}>
-                      Remove
+                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => act(() => revokeShareDevice(d.fullId))} aria-label={t('transfer.phone.removeDevice', { device: d.device })}>
+                      {t('transfer.phone.remove')}
                     </Button>
                   </li>
                 ))}
               </ul>
               <div>
                 <Button size="sm" variant="ghost" disabled={busy} onClick={() => act(() => revokeShareDevice('all'))}>
-                  Remove all devices
+                  {t('transfer.phone.removeAll')}
                 </Button>
               </div>
             </>
           ) : (
-            <p className="meta">No devices paired.</p>
+            <p className="meta">{t('transfer.phone.none')}</p>
           )}
         </div>
       </section>
@@ -682,13 +691,13 @@ export function PhonePanel({ status }) {
   return (
     <section className="panel panel-pad stack gap-4" aria-labelledby="ph-h">
       <h2 id="ph-h" className="section-title row gap-2">
-        <Laptop size={16} aria-hidden="true" /> Connect to a computer
+        <Laptop size={16} aria-hidden="true" /> {t('transfer.computer.title')}
       </h2>
-      <p className="muted">Running BIZSIM on a computer too? Pair with it to use its live research and case building from this device over Wi‑Fi.</p>
-      {paired && <p className="meta">Paired with {p.base} since {new Date(p.pairedAt).toLocaleDateString()}.</p>}
+      <p className="muted">{t('transfer.computer.intro')}</p>
+      {paired && <p className="meta">{t('transfer.computer.pairedWith', { base: p.base, date: formatDate(p.pairedAt) })}</p>}
       <div className="row wrap gap-2">
         <Button icon={ScanLine} onClick={() => setScan(true)}>
-          {paired ? 'Pair again' : 'Scan pairing code'}
+          {paired ? t('transfer.computer.pairAgain') : t('transfer.computer.scan')}
         </Button>
         {paired && (
           <Button
@@ -696,11 +705,11 @@ export function PhonePanel({ status }) {
             onClick={async () => {
               await unpair();
               refreshStatus();
-              toast('Disconnected from the computer');
+              toast(t('transfer.computer.disconnected'));
               setScan(false);
             }}
           >
-            Disconnect
+            {t('transfer.computer.disconnect')}
           </Button>
         )}
       </div>

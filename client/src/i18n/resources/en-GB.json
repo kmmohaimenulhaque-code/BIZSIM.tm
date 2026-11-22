@@ -1,0 +1,48 @@
+{
+  "dimensions": {
+    "LEADERSHIP": {
+      "left": "Decentralised"
+    }
+  },
+  "evidence": {
+    "kindHelp": {
+      "primary": "A record made by the people or organisation involved, or an official filing or dataset.",
+      "tertiary": "A general reference work (such as an encyclopedia) that summarises other sources."
+    }
+  },
+  "taxonomy": {
+    "pillar": {
+      "STRATEGY": {
+        "focus": "Asymmetric advantage, choosing the battlefield, mergers, and outmanoeuvring entrenched rivals."
+      },
+      "OPERATIONS": {
+        "focus": "Supply chains, bottlenecks, standardisation, speed and complex physical systems."
+      }
+    }
+  },
+  "research": {
+    "facts": {
+      "labels": {
+        "P749": "Parent organisation"
+      }
+    }
+  },
+  "principles": {
+    "builtInNote": "Every built-in principle is summarised in BIZSIM's own words with attribution; no passages are reproduced. Your own principles stay on this device and travel with QR transfer."
+  },
+  "about": {
+    "data": [
+      "Wikidata (CC0) and Wikipedia (CC BY-SA) for company profiles",
+      "U.S. SEC EDGAR for audited financials and filings",
+      "Google News, Bing News or GDELT for recent headlines (links only)",
+      "Wikipedia and Wikimedia Commons for each season's own lead image, free licences only (credited on use)",
+      "Piper open-source voice engine with public-domain / CC0 male voices",
+      "Optional: Gemini or OpenAI image generation, always labelled as AI"
+    ],
+    "licenseTitle": "Licence",
+    "license": "BIZSIM is released under the MIT licence. Book principles are short paraphrases for educational commentary; the books remain the property of their authors and publishers."
+  },
+  "keys": {
+    "intro": "Optional. All 200 seasons play without a key. A key adds AI live seasons, the chat season builder and AI illustrations. Paste any key: BIZSIM recognises the provider, checks which models really answer and adds them to your fallback chain."
+  }
+}

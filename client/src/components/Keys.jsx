@@ -9,10 +9,12 @@
 import { useEffect, useState } from 'react';
 import { KeyRound, Eye, EyeOff, Check, Trash2, ExternalLink, ChevronDown, ChevronUp, ShieldCheck, Sparkles, Power, ArrowDownUp, Info } from 'lucide-react';
 import { Button, Callout, Badge, toast } from './ui.jsx';
+import { formatInteger } from '../i18n/format.js';
 import { getKeys, testKey, changeServerChain, deviceKeys, setDeviceKeys, saveServerKeys } from '../lib/api.js';
 import { applyChainOp } from '@shared/keychain.js';
 import { refreshStatus, useStatus } from '../lib/useStatus.js';
 import { safeUrl } from '../lib/safe.js';
+import { useTranslation, Trans, t as tr } from '../i18n/index.js';
 
 const NAMES = {
   gemini: 'Google Gemini',
@@ -22,8 +24,8 @@ const NAMES = {
   groq: 'Groq',
   xai: 'xAI Grok',
   openrouter: 'OpenRouter',
-  custom: 'Custom endpoint',
 };
+const providerName = (p) => (p === 'custom' ? tr('keys.custom') : NAMES[p] || p);
 const SIGNUP = [
   ['gemini', 'https://aistudio.google.com/apikey', true],
   ['nvidia', 'https://build.nvidia.com/settings/api-keys', true],
@@ -64,7 +66,13 @@ function saveDeviceList(list) {
 }
 const viewOf = (list) => list.map((e) => ({ ...e, masked: mask(e.key), key: undefined, origin: 'device' }));
 
+const isPublicWebOrigin = () =>
+  typeof window !== 'undefined' &&
+  !window.Capacitor?.isNativePlatform?.() &&
+  !/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname || '');
+
 export function KeysPanel() {
+  const { t } = useTranslation();
   const [info, setInfo] = useState(null); // { manage, chain, sec, offline? }
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
@@ -113,7 +121,7 @@ export function KeysPanel() {
       await change({ type: 'add', entry: r.entry });
       setLast(r);
       setKey('');
-      toast(`${r.name} added: ${r.models.length > 1 ? `${r.models.length} models with automatic fallback` : r.textModel}`);
+      toast(r.models.length > 1 ? t('keys.addedMany', { name: r.name, count: r.models.length }) : t('keys.added', { name: r.name, model: r.textModel }));
     } catch (err) {
       toast(err.message, 'error');
     } finally {
@@ -132,7 +140,7 @@ export function KeysPanel() {
       setDeviceKeys(cur);
     }
     await load();
-    toast(v ? 'SEC EDGAR enabled' : 'SEC EDGAR contact removed');
+    toast(v ? t('keys.secOn') : t('keys.secOff'));
   };
 
   if (!info) return null;
@@ -143,24 +151,27 @@ export function KeysPanel() {
   return (
     <section className="panel panel-pad stack gap-4" aria-labelledby="keys-h">
       <h2 id="keys-h" className="section-title row gap-2">
-        <KeyRound size={16} aria-hidden="true" /> AI keys
+        <KeyRound size={16} aria-hidden="true" /> {t('keys.title')}
       </h2>
       <p className="muted">
-        Optional. All 200 seasons play without a key. A key adds AI live seasons, the chat season builder and AI illustrations. Paste any key: BIZSIM recognises the provider, checks which models really answer and adds them to your fallback chain.
+        {t('keys.intro')}
       </p>
       <Callout icon={ShieldCheck}>
-        {info.manage
-          ? 'Keys are saved on this computer only (in the BIZSIM data folder) and are also used by phones you pair over Wi-Fi. They are never shown in full again.'
-          : 'Keys are saved on this device only and sent with your own requests to the BIZSIM server you are connected to. They are never stored on the server.'}
+        {info.manage ? t('keys.storedHere') : t('keys.storedDevice')}
       </Callout>
+      {isPublicWebOrigin() && (
+        <Callout tone="warning" icon={Info}>
+          <strong>Public website notice:</strong> Avoid pasting personal API keys or SEC EDGAR contact credentials into untrusted public websites. For BYOK and SEC EDGAR features, download the official BIZSIM Desktop or Mobile apps or run a private self-hosted instance.
+        </Callout>
+      )}
       {info.offline && (
         <Callout tone="warning" icon={Info}>
-          AI features run on a BIZSIM server. Pair this phone with the desktop app (Settings, Connect to a computer) or set a server address, then add keys here. Seasons, progress and the principles library all work offline.
+          {t('keys.offline')}
         </Callout>
       )}
       {!info.manage && !info.offline && chain.length === 0 && status?.ai?.enabled && (
         <Callout icon={Check}>
-          The BIZSIM server you are connected to already has AI set up ({status.ai.provider}, {status.ai.model}). Add your own key only if you want this device to use it first.
+          {t('keys.serverHasAi', { provider: status.ai.provider, model: status.ai.model })}
         </Callout>
       )}
 
@@ -168,11 +179,11 @@ export function KeysPanel() {
         <div className="stack gap-2">
           <div className="row between wrap gap-2">
             <span className="meta row gap-2">
-              <ArrowDownUp size={14} aria-hidden="true" /> Fallback order: top to bottom, then each key's models left to right.
+              <ArrowDownUp size={14} aria-hidden="true" /> {t('keys.order')}
             </span>
             {editable.length > 1 && (
               <Button size="sm" variant="ghost" onClick={() => change({ type: 'sort' })}>
-                Auto-order
+                {t('keys.autoOrder')}
               </Button>
             )}
           </div>
@@ -183,19 +194,19 @@ export function KeysPanel() {
               return (
                 <li key={k.id} className={`key-row${k.enabled === false ? ' off' : ''}`}>
                   <span className="key-rank num" aria-hidden="true">
-                    {i + 1}
+                    {formatInteger(i + 1)}
                   </span>
                   <span className="stack gap-1 grow" style={{ minWidth: 0 }}>
                     <span className="row gap-2 wrap">
-                      <strong>{NAMES[k.provider] || k.provider}</strong>
-                      {k === firstOn && <Badge tone="success">Primary</Badge>}
-                      {k.enabled === false && <Badge>Paused</Badge>}
-                      {ro && <Badge title="Set in bizsim.env or .env">From settings file</Badge>}
+                      <strong>{providerName(k.provider)}</strong>
+                      {k === firstOn && <Badge tone="success">{t('keys.primary')}</Badge>}
+                      {k.enabled === false && <Badge>{t('keys.paused')}</Badge>}
+                      {ro && <Badge title={t('keys.fromFileHint')}>{t('keys.fromFile')}</Badge>}
                     </span>
-                    <span className="meta num">{k.masked}</span>
-                    <span className="key-models">
-                      {(k.models?.length ? k.models : ['auto (newest Flash)']).map((m, j) => (
-                        <span key={m} className="key-model" title={j === 0 ? 'Tried first' : `Fallback ${j}`}>
+                    <span className="meta num" dir="ltr">{k.masked}</span>
+                    <span className="key-models" dir="ltr">
+                      {(k.models?.length ? k.models : [t('keys.autoModel')]).map((m, j) => (
+                        <span key={m} className="key-model" title={j === 0 ? t('keys.triedFirst') : t('keys.fallbackN', { n: j })}>
                           {m}
                         </span>
                       ))}
@@ -203,10 +214,10 @@ export function KeysPanel() {
                   </span>
                   {!ro && (
                     <span className="row gap-1 key-actions">
-                      <Button size="sm" variant="ghost" icon={ChevronUp} aria-label="Move up" disabled={idx <= 0} onClick={() => change({ type: 'move', id: k.id, dir: -1 })} />
-                      <Button size="sm" variant="ghost" icon={ChevronDown} aria-label="Move down" disabled={idx < 0 || idx >= editable.length - 1} onClick={() => change({ type: 'move', id: k.id, dir: 1 })} />
-                      <Button size="sm" variant="ghost" icon={Power} aria-label={k.enabled === false ? 'Resume key' : 'Pause key'} onClick={() => change({ type: 'toggle', id: k.id })} />
-                      <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Remove ${NAMES[k.provider] || k.provider} key`} onClick={() => change({ type: 'remove', id: k.id }).then(() => toast('Key removed'))} />
+                      <Button size="sm" variant="ghost" icon={ChevronUp} aria-label={t('keys.moveUp')} disabled={idx <= 0} onClick={() => change({ type: 'move', id: k.id, dir: -1 })} />
+                      <Button size="sm" variant="ghost" icon={ChevronDown} aria-label={t('keys.moveDown')} disabled={idx < 0 || idx >= editable.length - 1} onClick={() => change({ type: 'move', id: k.id, dir: 1 })} />
+                      <Button size="sm" variant="ghost" icon={Power} aria-label={k.enabled === false ? t('keys.resume') : t('keys.pause')} onClick={() => change({ type: 'toggle', id: k.id })} />
+                      <Button size="sm" variant="ghost" icon={Trash2} aria-label={t('keys.remove', { name: providerName(k.provider) })} onClick={() => change({ type: 'remove', id: k.id }).then(() => toast(t('keys.removed')))} />
                     </span>
                   )}
                 </li>
@@ -218,7 +229,7 @@ export function KeysPanel() {
 
       <form className="stack gap-3" onSubmit={connect}>
         <label htmlFor="api-key" className="field">
-          <span style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>{chain.length ? 'Add another key (it becomes a fallback)' : 'Paste an API key'}</span>
+          <span style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>{chain.length ? t('keys.addAnother') : t('keys.paste')}</span>
         </label>
         <div className="row gap-2 wrap">
           <div className="grow" style={{ position: 'relative', minWidth: 220 }}>
@@ -228,48 +239,49 @@ export function KeysPanel() {
               type={show ? 'text' : 'password'}
               autoComplete="off"
               spellCheck={false}
-              placeholder="AIza...  nvapi-...  sk-ant-...  gsk_...  sk-..."
+              placeholder={t('keys.placeholderKey')}
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              style={{ paddingRight: 44 }}
+              dir="ltr"
+              style={{ paddingInlineEnd: 44 }}
             />
-            <button type="button" className="btn btn-ghost btn-icon" onClick={() => setShow(!show)} aria-label={show ? 'Hide key' : 'Show key'} style={{ position: 'absolute', right: 2, top: 2, minHeight: 40 }}>
+            <button type="button" className="btn btn-ghost btn-icon" onClick={() => setShow(!show)} aria-label={show ? t('keys.hide') : t('keys.show')} style={{ position: 'absolute', insetInlineEnd: 2, top: 2, minHeight: 40 }}>
               {show ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
             </button>
           </div>
           <Button type="submit" variant="primary" icon={Check} loading={busy} disabled={key.trim().length < 8 || busy || info.offline}>
-            {busy ? 'Checking models' : 'Add key'}
+            {busy ? t('keys.checking') : t('keys.add')}
           </Button>
         </div>
         <button type="button" className="link meta" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', justifySelf: 'start' }} onClick={() => setAdvanced(!advanced)} aria-expanded={advanced}>
-          <ChevronDown size={14} aria-hidden="true" style={{ transform: advanced ? 'rotate(180deg)' : 'none' }} /> Other provider or local model (OpenAI-compatible)
+          <ChevronDown size={14} aria-hidden="true" style={{ transform: advanced ? 'rotate(180deg)' : 'none' }} /> {t('keys.other')}
         </button>
         {advanced && (
           <div className="field">
-            <label htmlFor="base-url">Endpoint URL</label>
-            <input id="base-url" className="input" inputMode="url" placeholder="e.g. http://localhost:11434/v1 (Ollama) or https://api.together.xyz/v1" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
-            <span className="hint">For local models such as Ollama, any text works as the key.</span>
+            <label htmlFor="base-url">{t('keys.endpoint')}</label>
+            <input id="base-url" className="input" dir="ltr" inputMode="url" placeholder={t('keys.endpointPlaceholder')} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+            <span className="hint">{t('keys.endpointHint')}</span>
           </div>
         )}
         {last && (
           <Callout icon={Sparkles}>
-            <strong>{last.name}</strong> is ready. Models in fallback order: <span className="num">{(last.models?.length ? last.models : [last.textModel]).join(', ')}</span>
+            <Trans i18nKey="keys.ready" values={{ name: last.name }} components={{ strong: <strong /> }} /> <span className="num" dir="ltr">{(last.models?.length ? last.models : [last.textModel]).join(', ')}</span>
             {last.imageModel ? (
               <>
                 {' '}
-                . Images: <span className="num">{last.imageModel}</span>
+                {t('keys.images')} <span className="num" dir="ltr">{last.imageModel}</span>
               </>
             ) : null}
-            {last.provider === 'gemini' && '. BIZSIM moves to newer Gemini models automatically.'}
-            {last.provider === 'nvidia' && '. These are NVIDIA free-endpoint models, fastest first.'}
+            {last.provider === 'gemini' && t('keys.geminiAuto')}
+            {last.provider === 'nvidia' && t('keys.nvidiaFree')}
           </Callout>
         )}
         <div className="meta row wrap gap-3">
-          <span>Get a key:</span>
+          <span>{t('keys.getKey')}</span>
           {SIGNUP.map(([p, url, free]) => (
             <a key={p} className="link" href={safeUrl(url)} target="_blank" rel="noreferrer">
               {NAMES[p]}
-              {free ? ' (free tier)' : ''} <ExternalLink aria-hidden="true" />
+              {free ? t('keys.freeTier') : ''} <ExternalLink aria-hidden="true" />
             </a>
           ))}
         </div>
@@ -277,13 +289,13 @@ export function KeysPanel() {
 
       <form className="stack gap-3" onSubmit={saveSec} style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s4)' }}>
         <div>
-          <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>SEC EDGAR (US company financials)</div>
-          <p className="meta">No key needed. The SEC only asks for a name and contact email with each request.</p>
+          <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>{t('keys.secTitle')}</div>
+          <p className="meta">{t('keys.secHint')}</p>
         </div>
         <div className="row gap-2 wrap">
-          <input className="input grow" style={{ minWidth: 160 }} aria-label="Your name" placeholder="Your name" value={secName} onChange={(e) => setSecName(e.target.value)} />
-          <input className="input grow" style={{ minWidth: 200 }} aria-label="Your email" type="email" placeholder="you@example.com" value={secEmail} onChange={(e) => setSecEmail(e.target.value)} />
-          <Button type="submit">Save</Button>
+          <input className="input grow" style={{ minWidth: 160 }} aria-label={t('keys.yourName')} placeholder={t('keys.yourName')} value={secName} onChange={(e) => setSecName(e.target.value)} />
+          <input className="input grow" style={{ minWidth: 200 }} aria-label={t('keys.yourEmail')} type="email" dir="ltr" placeholder={t('keys.placeholderEmail')} value={secEmail} onChange={(e) => setSecEmail(e.target.value)} />
+          <Button type="submit">{t('keys.save')}</Button>
         </div>
       </form>
     </section>

@@ -9,6 +9,20 @@
 // * Ids are deterministic, so planning twice never creates duplicates.
 import { caseOfDay, localDateKey } from './caseOfDay.js';
 
+// English text, used when the caller passes no translator (tests, server).
+// The app passes ctx.t so notifications are written in the interface language.
+const EN = {
+  'notify.plan.cotdTitle': () => 'Case of the Day',
+  'notify.plan.cotdBody': (v) => `${v.title}. What would you decide?`,
+  'notify.plan.resumeTitle': () => 'Your season is waiting',
+  'notify.plan.resumeBody': (v) => `Pick up “${v.title}” where you left off.`,
+  'notify.plan.weeklyTitle': () => 'Your week in BIZSIM',
+  'notify.plan.weeklyDone': (v) => `Goal reached: ${v.count} seasons this week.`,
+  'notify.plan.weeklyProgress': (v) => `${v.done} of ${v.goal} seasons this week. One more episode keeps the habit going.`,
+  'notify.plan.customTitle': () => 'BIZSIM reminder',
+};
+const english = (key, vars) => EN[key](vars || {});
+
 export const CATEGORY = {
   caseOfDay: { label: 'Case of the Day', help: 'One season a day to try, chosen at random by date.' },
   resume: { label: 'Resume an episode', help: 'A reminder when a season you started has been waiting a day or more.' },
@@ -78,6 +92,7 @@ export function planNotifications(settings, ctx) {
   if (!s.enabled) return [];
   const now = ctx.now || new Date();
   const days = ctx.days || 14;
+  const tr = typeof ctx.t === 'function' ? ctx.t : english;
   const out = [];
   const push = (n) => {
     const when = respectQuiet(n.at, s.quietStart, s.quietEnd);
@@ -93,7 +108,7 @@ export function planNotifications(settings, ctx) {
       if (s.frequency === 'weekly' && dow !== 1) continue;
       const key = localDateKey(day);
       const id = caseOfDay(ctx.curatedIds, key);
-      push({ key: `cotd|${key}`, category: 'caseOfDay', title: 'Case of the Day', body: `${ctx.titleOf(id)}. What would you decide?`, at: at(day, s.time), link: `/cases/${id}` });
+      push({ key: `cotd|${key}`, category: 'caseOfDay', title: tr('notify.plan.cotdTitle'), body: tr('notify.plan.cotdBody', { title: ctx.titleOf(id) }), at: at(day, s.time), link: `/cases/${id}` });
     }
   }
 
@@ -103,7 +118,7 @@ export function planNotifications(settings, ctx) {
     const due = at(new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), s.time);
     // Remind once, the day after the last decision (or tomorrow if that has passed).
     const when = due > now ? due : at(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), s.time);
-    push({ key: `resume|${r.caseId}|${localDateKey(when)}`, category: 'resume', title: 'Your season is waiting', body: `Pick up “${r.title}” where you left off.`, at: new Date(when.getTime() + 30 * 60_000), link: `/cases/${r.caseId}` });
+    push({ key: `resume|${r.caseId}|${localDateKey(when)}`, category: 'resume', title: tr('notify.plan.resumeTitle'), body: tr('notify.plan.resumeBody', { title: r.title }), at: new Date(when.getTime() + 30 * 60_000), link: `/cases/${r.caseId}` });
   }
 
   if (s.categories.weeklyGoal && s.weeklyGoal > 0) {
@@ -112,8 +127,8 @@ export function planNotifications(settings, ctx) {
     let when = at(d, s.time);
     if (when <= now) when = at(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7), s.time);
     const done = ctx.completedThisWeek || 0;
-    const body = done >= s.weeklyGoal ? `Goal reached: ${done} seasons this week.` : `${done} of ${s.weeklyGoal} seasons this week. One more episode keeps the habit going.`;
-    push({ key: `weekly|${localDateKey(when)}`, category: 'weeklyGoal', title: 'Your week in BIZSIM', body, at: when, link: '/learning' });
+    const body = done >= s.weeklyGoal ? tr('notify.plan.weeklyDone', { count: done }) : tr('notify.plan.weeklyProgress', { done, goal: s.weeklyGoal });
+    push({ key: `weekly|${localDateKey(when)}`, category: 'weeklyGoal', title: tr('notify.plan.weeklyTitle'), body, at: when, link: '/learning' });
   }
 
   if (s.categories.custom) {
@@ -121,7 +136,7 @@ export function planNotifications(settings, ctx) {
       for (let i = 0; i < Math.min(days, 7); i++) {
         const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
         if (r.days?.length && !r.days.includes(day.getDay())) continue;
-        push({ key: `custom|${r.id}|${localDateKey(day)}`, category: 'custom', title: 'BIZSIM reminder', body: r.text, at: at(day, r.time), link: '/' });
+        push({ key: `custom|${r.id}|${localDateKey(day)}`, category: 'custom', title: tr('notify.plan.customTitle'), body: r.text, at: at(day, r.time), link: '/' });
       }
     }
   }

@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { FolderOpen, HardDrive, Download, RotateCcw } from 'lucide-react';
 import { Button, Callout, toast } from './ui.jsx';
+import { useTranslation, Trans } from '../i18n/index.js';
 
 export function StoragePanel() {
+  const { t } = useTranslation();
   const api = typeof window !== 'undefined' ? window.bizsimDesktop : null;
   const [paths, setPaths] = useState(null);
   const [moving, setMoving] = useState(false);
@@ -16,12 +18,12 @@ export function StoragePanel() {
   if (!api || !paths) return null;
 
   const moveData = async () => {
-    if (!window.confirm('BIZSIM will copy your progress, keys and saved seasons to the folder you choose, then restart. Continue?')) return;
+    if (!window.confirm(t('storage.confirmMove'))) return;
     setMoving(true);
     try {
       const r = await api.chooseDataFolder();
       if (r?.changed) {
-        toast('Data copied, restarting BIZSIM');
+        toast(t('storage.copied'));
         setTimeout(() => api.relaunch(), 900);
       } else setMoving(false);
     } catch (e) {
@@ -30,9 +32,9 @@ export function StoragePanel() {
     }
   };
   const resetData = async () => {
-    if (!window.confirm('Copy your data back to the default folder and restart?')) return;
+    if (!window.confirm(t('storage.confirmReset'))) return;
     await api.resetDataFolder();
-    toast('Restarting BIZSIM');
+    toast(t('storage.restarting'));
     setTimeout(() => api.relaunch(), 900);
   };
   const isDefault = paths.dataFolder === paths.defaultDataFolder;
@@ -40,32 +42,32 @@ export function StoragePanel() {
   return (
     <section className="panel panel-pad stack gap-4" aria-labelledby="st-h">
       <h2 id="st-h" className="section-title row gap-2">
-        <HardDrive size={16} aria-hidden="true" /> Storage locations
+        <HardDrive size={16} aria-hidden="true" /> {t('storage.title')}
       </h2>
 
       <div className="stack gap-2">
-        <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>Data folder</div>
-        <p className="meta">Your progress, AI keys, saved seasons and generated images.</p>
-        <code className="meta" style={{ overflowWrap: 'anywhere' }}>{paths.dataFolder}</code>
+        <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>{t('storage.dataFolder')}</div>
+        <p className="meta">{t('storage.dataHint')}</p>
+        <code className="meta" dir="ltr" style={{ overflowWrap: 'anywhere' }}>{paths.dataFolder}</code>
         <div className="row wrap gap-2">
           <Button size="sm" icon={FolderOpen} onClick={() => api.openFolder(paths.dataFolder)}>
-            Open
+            {t('storage.open')}
           </Button>
           <Button size="sm" icon={HardDrive} loading={moving} onClick={moveData}>
-            Change…
+            {t('storage.change')}
           </Button>
           {!isDefault && (
             <Button size="sm" variant="ghost" icon={RotateCcw} onClick={resetData}>
-              Use default folder
+              {t('storage.useDefault')}
             </Button>
           )}
         </div>
       </div>
 
       <div className="stack gap-2" style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s4)' }}>
-        <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>Downloads</div>
-        <p className="meta">Where backups and other files from BIZSIM are saved.</p>
-        <div className="stack gap-2" role="radiogroup" aria-label="Download location">
+        <div style={{ fontWeight: 500, fontSize: 'var(--t-13)' }}>{t('storage.downloads')}</div>
+        <p className="meta">{t('storage.downloadsHint')}</p>
+        <div className="stack gap-2" role="radiogroup" aria-label={t('storage.downloadLocation')}>
           <label className="row gap-3" style={{ cursor: 'pointer' }}>
             <input
               type="radio"
@@ -76,7 +78,7 @@ export function StoragePanel() {
                 load();
               }}
             />
-            <span>Ask where to save each file</span>
+            <span>{t('storage.ask')}</span>
           </label>
           <label className="row gap-3" style={{ cursor: 'pointer' }}>
             <input
@@ -87,12 +89,12 @@ export function StoragePanel() {
                 if (await api.chooseDownloadFolder()) load();
               }}
             />
-            <span>Always save to a folder I choose</span>
+            <span>{t('storage.always')}</span>
           </label>
         </div>
         {paths.downloadFolder && (
           <div className="row wrap gap-2" style={{ alignItems: 'center' }}>
-            <code className="meta" style={{ overflowWrap: 'anywhere' }}>{paths.downloadFolder}</code>
+            <code className="meta" dir="ltr" style={{ overflowWrap: 'anywhere' }}>{paths.downloadFolder}</code>
             <Button
               size="sm"
               icon={Download}
@@ -100,12 +102,14 @@ export function StoragePanel() {
                 if (await api.chooseDownloadFolder()) load();
               }}
             >
-              Change…
+              {t('storage.change')}
             </Button>
           </div>
         )}
       </div>
-      <Callout>The app’s own location is chosen when you install it: Windows: <em>Browse…</em> in the installer; macOS and Linux: wherever you put the app. Moving or reinstalling the app never touches this data folder.</Callout>
+      <Callout>
+        <Trans i18nKey="storage.appLocation" components={{ em: <em /> }} />
+      </Callout>
     </section>
   );
 }

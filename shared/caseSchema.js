@@ -6,6 +6,8 @@
 // renders these strings as text only.
 import { DIMENSION_IDS } from './dimensions.js';
 import { CONTENT_CLASSES } from './contentClass.js';
+import { cleanLocale } from './locales.js';
+import { sanitizeImageUrl } from './imagePolicy.js';
 
 export const LIMITS = {
   text: 4000,
@@ -251,9 +253,14 @@ export function sanitizeCase(input, { source } = {}) {
     generatedAt: cleanStr(input.generatedAt, 40),
     importedAt: cleanStr(input.importedAt, 40),
     model: cleanStr(input.model, 120),
+    // Language the season's text is written in (AI seasons written for a non-English interface).
+    contentLocale: cleanLocale(input.contentLocale) || undefined,
     provider: cleanStr(input.provider, 60),
     wiki: cleanStr(input.wiki, 200),
     imageQuery: cleanStr(input.imageQuery, 200),
+    cover: typeof input.cover === 'string' ? sanitizeImageUrl(input.cover, title) || undefined : undefined,
+    image: typeof input.image === 'string' ? sanitizeImageUrl(input.image, title) || undefined : undefined,
+    coverUrl: typeof input.coverUrl === 'string' ? sanitizeImageUrl(input.coverUrl, title) || undefined : undefined,
     reading: cleanStr(input.reading, LIMITS.short * 2),
     catalogueId: cleanStr(input.catalogueId, 40),
     evidenceChecks: evidenceChecks(input.evidenceChecks),

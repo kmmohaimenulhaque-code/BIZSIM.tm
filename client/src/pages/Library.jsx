@@ -8,12 +8,19 @@ import { CASES } from '@shared/cases/index.js';
 import { Badge, Button, Callout, Empty, Tabs, TabPanel, toast } from '../components/ui.jsx';
 import { useStore, saveBook, removeBook, savePrinciple, removePrinciple, setCaseTags } from '../lib/store.js';
 import { useLibrary, allTags } from '../lib/library.js';
+import { useTranslation, t as tr, useLocale } from '../i18n/index.js';
+import { LOCALE_BY_CODE } from '@shared/locales.js';
+import { formatInteger } from '../i18n/format.js';
 
+// Tags are separated by commas in any script (Latin, Arabic, Chinese/Japanese).
 const splitTags = (s) =>
   String(s || '')
-    .split(',')
-    .map((t) => t.trim())
+    .split(/[,،，、]/)
+    .map((x) => x.trim())
     .filter(Boolean);
+
+// The theme of the user's own books is stored as "My library"; show it in the interface language.
+const themeLabel = (theme) => (theme === 'My library' ? tr('library.myLibrary') : theme);
 
 function useAllCases() {
   const mine = useStore((s) => s.myCases);
@@ -21,27 +28,28 @@ function useAllCases() {
 }
 
 /** Search-and-pick seasons (built-in and the user's own). */
-export function SeasonPicker({ value, onChange, label = 'Linked seasons' }) {
+export function SeasonPicker({ value, onChange, label }) {
+  const { t } = useTranslation();
   const all = useAllCases();
   const [q, setQ] = useState('');
   const byId = useMemo(() => Object.fromEntries(all.map((c) => [c.id, c])), [all]);
   const hits = q.trim().length < 2 ? [] : all.filter((c) => !value.includes(c.id) && `${c.title} ${c.company} ${c.yearLabel}`.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
   return (
     <div className="field">
-      <label htmlFor="season-pick">{label}</label>
+      <label htmlFor="season-pick">{label || t('principles.picker.label')}</label>
       {value.length > 0 && (
         <div className="badges">
           {value.map((id) => (
             <span key={id} className="badge">
               {byId[id]?.company || id}
-              <button type="button" className="chip-x" aria-label={`Unlink ${byId[id]?.company || id}`} onClick={() => onChange(value.filter((x) => x !== id))}>
+              <button type="button" className="chip-x" aria-label={t('principles.picker.unlink', { name: byId[id]?.company || id })} onClick={() => onChange(value.filter((x) => x !== id))}>
                 <X size={12} aria-hidden="true" />
               </button>
             </span>
           ))}
         </div>
       )}
-      <input id="season-pick" className="input" type="search" placeholder="Type a company, person or year to link a season" value={q} onChange={(e) => setQ(e.target.value)} />
+      <input id="season-pick" className="input" type="search" placeholder={t('principles.picker.placeholder')} value={q} onChange={(e) => setQ(e.target.value)} />
       {hits.length > 0 && (
         <ul className="pick-list">
           {hits.map((c) => (
@@ -64,6 +72,7 @@ export function SeasonPicker({ value, onChange, label = 'Linked seasons' }) {
 }
 
 function PrincipleForm({ initial, onDone }) {
+  const { t } = useTranslation();
   const lib = useLibrary();
   const [name, setName] = useState(initial?.name || '');
   const [idea, setIdea] = useState(initial?.idea || '');
@@ -71,11 +80,11 @@ function PrincipleForm({ initial, onDone }) {
   const [book, setBook] = useState(initial?.book ?? '');
   const [tags, setTags] = useState((initial?.tags || []).join(', '));
   // Seasons linked to this principle live on each season's tag record.
-  const linkedNow = useMemo(() => (initial?.id ? Object.entries(lib.tags).filter(([, t]) => (t.principles || []).includes(initial.id)).map(([id]) => id) : []), [initial, lib.tags]);
+  const linkedNow = useMemo(() => (initial?.id ? Object.entries(lib.tags).filter(([, x]) => (x.principles || []).includes(initial.id)).map(([id]) => id) : []), [initial, lib.tags]);
   const [seasons, setSeasons] = useState(linkedNow);
   const save = (e) => {
     e.preventDefault();
-    if (!name.trim() || !idea.trim()) return toast('Give the principle a name and the idea in a sentence or two.', 'error');
+    if (!name.trim() || !idea.trim()) return toast(t('principles.form.needNameIdea'), 'error');
     const id = savePrinciple({ ...(initial?.custom ? initial : {}), id: initial?.custom ? initial.id : undefined, name: name.trim(), idea: idea.trim(), apply: apply.trim(), book, tags: splitTags(tags) });
     for (const cid of new Set([...linkedNow, ...seasons])) {
       const cur = lib.tags[cid]?.principles || [];
@@ -84,31 +93,31 @@ function PrincipleForm({ initial, onDone }) {
       if (want && !has) setCaseTags(cid, { principles: [...cur, id] });
       if (!want && has) setCaseTags(cid, { principles: cur.filter((x) => x !== id) });
     }
-    toast(initial?.custom ? 'Principle updated' : 'Principle added to your library');
+    toast(initial?.custom ? t('principles.form.updated') : t('principles.form.added'));
     onDone();
   };
   return (
-    <form className="panel panel-pad stack gap-3" onSubmit={save} aria-label={initial ? 'Edit principle' : 'Add a principle'}>
-      <h2 className="h3">{initial?.custom ? 'Edit principle' : 'Add a principle'}</h2>
+    <form className="panel panel-pad stack gap-3" onSubmit={save} aria-label={initial ? t('principles.form.edit') : t('principles.form.add')}>
+      <h2 className="h3">{initial?.custom ? t('principles.form.edit') : t('principles.form.add')}</h2>
       <div className="field">
-        <label htmlFor="pr-name">Name</label>
-        <input id="pr-name" className="input" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Trust compounds faster than capital" />
+        <label htmlFor="pr-name">{t('principles.form.name')}</label>
+        <input id="pr-name" className="input" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('principles.form.namePlaceholder')} dir="auto" />
       </div>
       <div className="field">
-        <label htmlFor="pr-idea">The idea, in your own words</label>
+        <label htmlFor="pr-idea">{t('principles.form.idea')}</label>
         <textarea id="pr-idea" className="input" rows={3} maxLength={600} value={idea} onChange={(e) => setIdea(e.target.value)} />
       </div>
       <div className="field">
-        <label htmlFor="pr-apply">How to apply it (optional)</label>
+        <label htmlFor="pr-apply">{t('principles.form.apply')}</label>
         <textarea id="pr-apply" className="input" rows={2} maxLength={400} value={apply} onChange={(e) => setApply(e.target.value)} />
       </div>
       <div className="row gap-3 wrap">
         <div className="field grow" style={{ minWidth: 200 }}>
-          <label htmlFor="pr-book">Book or source</label>
+          <label htmlFor="pr-book">{t('principles.form.book')}</label>
           <select id="pr-book" className="select" value={book} onChange={(e) => setBook(e.target.value)}>
-            <option value="">My own note</option>
+            <option value="">{t('principles.form.ownNote')}</option>
             {lib.customBooks.length > 0 && (
-              <optgroup label="My books">
+              <optgroup label={t('principles.form.myBooks')}>
                 {lib.customBooks.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.title}
@@ -116,7 +125,7 @@ function PrincipleForm({ initial, onDone }) {
                 ))}
               </optgroup>
             )}
-            <optgroup label="BIZSIM library">
+            <optgroup label={t('principles.form.bizsimLibrary')}>
               {lib.books
                 .filter((b) => !b.custom)
                 .map((b) => (
@@ -128,17 +137,17 @@ function PrincipleForm({ initial, onDone }) {
           </select>
         </div>
         <div className="field grow" style={{ minWidth: 200 }}>
-          <label htmlFor="pr-tags">Tags (comma separated)</label>
-          <input id="pr-tags" className="input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="trust, trade, ethics" />
+          <label htmlFor="pr-tags">{t('principles.form.tags')}</label>
+          <input id="pr-tags" className="input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder={t('principles.form.tagsPlaceholder')} />
         </div>
       </div>
       <SeasonPicker value={seasons} onChange={setSeasons} />
       <div className="row gap-2">
         <Button type="submit" variant="primary">
-          Save
+          {t('common.save')}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </Button>
       </div>
     </form>
@@ -146,6 +155,7 @@ function PrincipleForm({ initial, onDone }) {
 }
 
 function BookForm({ initial, onDone }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(initial?.title || '');
   const [author, setAuthor] = useState(initial?.author || '');
   const [year, setYear] = useState(initial?.year ? String(initial.year) : '');
@@ -153,44 +163,44 @@ function BookForm({ initial, onDone }) {
   const [note, setNote] = useState(initial?.note || '');
   const save = (e) => {
     e.preventDefault();
-    if (!title.trim()) return toast('Give the book a title.', 'error');
-    saveBook({ ...(initial || {}), title: title.trim(), author: author.trim() || 'Unknown author', year: Number(year) || 0, theme: theme.trim() || 'My library', note: note.trim() });
-    toast(initial ? 'Book updated' : 'Book added. Now add its principles.');
+    if (!title.trim()) return toast(t('principles.bookForm.needTitle'), 'error');
+    saveBook({ ...(initial || {}), title: title.trim(), author: author.trim() || t('principles.bookForm.unknownAuthor'), year: Number(year) || 0, theme: theme.trim() || 'My library', note: note.trim() });
+    toast(initial ? t('principles.bookForm.updated') : t('principles.bookForm.added'));
     onDone();
   };
   return (
-    <form className="panel panel-pad stack gap-3" onSubmit={save} aria-label={initial ? 'Edit book' : 'Add a book'}>
-      <h2 className="h3">{initial ? 'Edit book' : 'Add a book'}</h2>
+    <form className="panel panel-pad stack gap-3" onSubmit={save} aria-label={initial ? t('principles.bookForm.edit') : t('principles.bookForm.add')}>
+      <h2 className="h3">{initial ? t('principles.bookForm.edit') : t('principles.bookForm.add')}</h2>
       <div className="row gap-3 wrap">
         <div className="field grow" style={{ minWidth: 220 }}>
-          <label htmlFor="bk-title">Title</label>
+          <label htmlFor="bk-title">{t('principles.bookForm.title')}</label>
           <input id="bk-title" className="input" maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
         <div className="field grow" style={{ minWidth: 180 }}>
-          <label htmlFor="bk-author">Author</label>
+          <label htmlFor="bk-author">{t('principles.bookForm.author')}</label>
           <input id="bk-author" className="input" maxLength={80} value={author} onChange={(e) => setAuthor(e.target.value)} />
         </div>
       </div>
       <div className="row gap-3 wrap">
         <div className="field" style={{ width: 120 }}>
-          <label htmlFor="bk-year">Year</label>
+          <label htmlFor="bk-year">{t('principles.bookForm.year')}</label>
           <input id="bk-year" className="input" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value.replace(/[^\d-]/g, '').slice(0, 5))} />
         </div>
         <div className="field grow" style={{ minWidth: 180 }}>
-          <label htmlFor="bk-theme">Theme</label>
-          <input id="bk-theme" className="input" maxLength={40} value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="e.g. Islamic economics, Leadership" />
+          <label htmlFor="bk-theme">{t('principles.bookForm.theme')}</label>
+          <input id="bk-theme" className="input" maxLength={40} value={theme} onChange={(e) => setTheme(e.target.value)} placeholder={t('principles.bookForm.themePlaceholder')} />
         </div>
       </div>
       <div className="field">
-        <label htmlFor="bk-note">Why it matters to you (optional)</label>
+        <label htmlFor="bk-note">{t('principles.bookForm.note')}</label>
         <textarea id="bk-note" className="input" rows={2} maxLength={400} value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
       <div className="row gap-2">
         <Button type="submit" variant="primary">
-          Save
+          {t('common.save')}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </Button>
       </div>
     </form>
@@ -198,6 +208,8 @@ function BookForm({ initial, onDone }) {
 }
 
 export default function Principles() {
+  const { t } = useTranslation();
+  const locale = useLocale();
   const lib = useLibrary();
   const all = useAllCases();
   const loc = useLocation();
@@ -234,30 +246,28 @@ export default function Principles() {
   const mineCount = lib.customPrinciples.length + lib.customBooks.length;
 
   const del = (kind, item) => {
-    if (!window.confirm(`Delete "${item.name || item.title}" from your library?`)) return;
+    if (!window.confirm(t('principles.confirmDelete', { name: item.name || item.title }))) return;
     if (kind === 'book') removeBook(item.id);
     else removePrinciple(item.id);
-    toast('Deleted');
+    toast(t('principles.deleted'));
   };
 
   return (
     <div className="stack gap-6">
       <header className="row between wrap gap-4" style={{ alignItems: 'flex-end' }}>
         <div className="stack gap-3">
-          <div className="eyebrow eyebrow-rule">Principles library</div>
+          <div className="eyebrow eyebrow-rule">{t('principles.eyebrow')}</div>
           <h1 className="display" style={{ fontSize: 'var(--t-36)' }}>
-            The ideas behind the decisions.
+            {t('principles.title')}
           </h1>
-          <p className="lead">
-            {lib.principles.length} principles from {lib.books.length} books{mineCount ? `, ${mineCount} of them yours` : ''}. Add your own books and principles, tag them, and link them to any season.
-          </p>
+          <p className="lead">{t(mineCount ? 'principles.leadMine' : 'principles.lead', { principles: formatInteger(lib.principles.length), books: formatInteger(lib.books.length), mine: formatInteger(mineCount) })}</p>
         </div>
         <div className="row gap-2 wrap">
           <Button icon={Plus} variant="primary" onClick={() => setEditing({ kind: 'principle' })}>
-            Add principle
+            {t('principles.addPrinciple')}
           </Button>
           <Button icon={BookOpen} onClick={() => setEditing({ kind: 'book' })}>
-            Add book
+            {t('principles.addBook')}
           </Button>
         </div>
       </header>
@@ -266,13 +276,13 @@ export default function Principles() {
       {editing?.kind === 'book' && <BookForm initial={editing.item} onDone={() => setEditing(null)} />}
 
       <Tabs
-        label="Library sections"
+        label={t('principles.sections')}
         value={tab}
         onChange={setTab}
         tabs={[
-          { id: 'principles', label: 'Principles', count: lib.principles.length },
-          { id: 'books', label: 'Books', count: lib.books.length },
-          { id: 'tags', label: 'My tags', count: Object.keys(lib.tags).length },
+          { id: 'principles', label: t('principles.tabPrinciples'), count: formatInteger(lib.principles.length) },
+          { id: 'books', label: t('principles.tabBooks'), count: formatInteger(lib.books.length) },
+          { id: 'tags', label: t('principles.tabTags'), count: formatInteger(Object.keys(lib.tags).length) },
         ]}
       />
 
@@ -281,31 +291,34 @@ export default function Principles() {
           <div className="row wrap gap-3">
             <div className="search-field grow" style={{ maxWidth: 420 }}>
               <Search aria-hidden="true" />
-              <input className="input" type="search" placeholder="Search principles, tags, books" aria-label="Search principles" value={q} onChange={(e) => setQ(e.target.value)} />
+              <input className="input" type="search" placeholder={t('principles.searchPlaceholder')} aria-label={t('principles.searchLabel')} value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <select className="select" aria-label="Filter by book" value={book} onChange={(e) => setBook(e.target.value)}>
-              <option value="">All books</option>
+            <select className="select" aria-label={t('principles.filterBook')} value={book} onChange={(e) => setBook(e.target.value)}>
+              <option value="">{t('principles.allBooks')}</option>
               {lib.books.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.custom ? `${b.title} (mine)` : b.title}
+                  {b.custom ? t('principles.mineSuffix', { title: b.title }) : b.title}
                 </option>
               ))}
             </select>
             {tags.length > 0 && (
-              <select className="select" aria-label="Filter by tag" value={tag} onChange={(e) => setTag(e.target.value)}>
-                <option value="">All tags</option>
-                {tags.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+              <select className="select" aria-label={t('principles.filterTag')} value={tag} onChange={(e) => setTag(e.target.value)}>
+                <option value="">{t('principles.allTags')}</option>
+                {tags.map((x) => (
+                  <option key={x} value={x}>
+                    {x}
                   </option>
                 ))}
               </select>
             )}
             <label className="row gap-2 meta" style={{ cursor: 'pointer' }}>
-              <input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} /> Only mine
+              <input type="checkbox" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} /> {t('principles.onlyMine')}
             </label>
           </div>
-          <Callout icon={BookOpen}>Every built-in principle is summarised in BIZSIM's own words with attribution; no passages are reproduced. Your own principles stay on this device and travel with QR transfer.</Callout>
+          <Callout icon={BookOpen}>
+            {t('principles.builtInNote')}
+            {LOCALE_BY_CODE[locale]?.language !== 'en' ? ` ${t('principles.contentNote')}` : ''}
+          </Callout>
           <div className="case-grid">
             {list.map((p) => {
               const b = lib.bookOf(p);
@@ -313,21 +326,27 @@ export default function Principles() {
               return (
                 <article key={p.id} id={p.id} className={`panel panel-pad stack gap-3${p.custom ? ' mine-card' : ''}`} style={loc.hash === `#${p.id}` ? { borderColor: 'var(--accent)' } : undefined}>
                   <div className="row between gap-2">
-                    <span className="meta-caps">{b.theme}</span>
-                    {p.custom && <Badge tone="accent">Mine</Badge>}
+                    <span className="meta-caps" lang={p.custom ? undefined : 'en'}>
+                      {themeLabel(b.theme)}
+                    </span>
+                    {p.custom && <Badge tone="accent">{t('principles.mine')}</Badge>}
                   </div>
-                  <h2 className="h3">{p.name}</h2>
-                  <p className="muted">{p.idea}</p>
-                  {p.apply && <p className="meta">How to apply: {p.apply}</p>}
-                  <p className="meta">
+                  <h2 className="h3" lang={p.custom ? undefined : 'en'} dir="auto">
+                    {p.name}
+                  </h2>
+                  <p className="muted" lang={p.custom ? undefined : 'en'} dir="auto">
+                    {p.idea}
+                  </p>
+                  {p.apply && <p className="meta">{t('principles.howToApply', { text: p.apply })}</p>}
+                  <p className="meta" lang={p.custom ? undefined : 'en'} dir="auto">
                     {b.title}, {b.author}
                     {b.year > 0 ? `, ${b.year}` : ''}
                   </p>
                   {(p.tags || []).length > 0 && (
                     <div className="badges">
-                      {p.tags.map((t) => (
-                        <button key={t} type="button" className="badge tag-badge" onClick={() => setTag(t)}>
-                          <Tag size={11} aria-hidden="true" /> {t}
+                      {p.tags.map((x) => (
+                        <button key={x} type="button" className="badge tag-badge" onClick={() => setTag(x)}>
+                          <Tag size={11} aria-hidden="true" /> {x}
                         </button>
                       ))}
                     </div>
@@ -339,20 +358,20 @@ export default function Principles() {
                           {c.company}
                         </Link>
                       ))}
-                      {used.length > 12 && <span className="meta">+{used.length - 12} more</span>}
+                      {used.length > 12 && <span className="meta">{t('principles.more', { count: used.length - 12 })}</span>}
                     </div>
                   )}
                   <div className="row gap-2" style={{ marginTop: 'auto' }}>
                     {p.custom ? (
                       <>
                         <Button size="sm" variant="ghost" icon={Pencil} onClick={() => setEditing({ kind: 'principle', item: p })}>
-                          Edit
+                          {t('principles.edit')}
                         </Button>
-                        <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Delete ${p.name}`} onClick={() => del('principle', p)} />
+                        <Button size="sm" variant="ghost" icon={Trash2} aria-label={t('principles.deleteItem', { name: p.name })} onClick={() => del('principle', p)} />
                       </>
                     ) : (
-                      <Button size="sm" variant="ghost" icon={Link2} onClick={() => setEditing({ kind: 'principle', item: { ...p, custom: false } })} title="Make your own version linked to seasons">
-                        Adapt as mine
+                      <Button size="sm" variant="ghost" icon={Link2} onClick={() => setEditing({ kind: 'principle', item: { ...p, custom: false } })} title={t('principles.adaptHint')}>
+                        {t('principles.adapt')}
                       </Button>
                     )}
                   </div>
@@ -360,7 +379,7 @@ export default function Principles() {
               );
             })}
           </div>
-          {!list.length && <Empty icon={Search}>No principles match.</Empty>}
+          {!list.length && <Empty icon={Search}>{t('principles.noneMatch')}</Empty>}
         </div>
       </TabPanel>
 
@@ -371,13 +390,15 @@ export default function Principles() {
             return (
               <article key={b.id} className={`panel panel-pad stack gap-2${b.custom ? ' mine-card' : ''}`}>
                 <div className="row between gap-2">
-                  <span className="meta-caps">{b.theme}</span>
-                  {b.custom && <Badge tone="accent">Mine</Badge>}
+                  <span className="meta-caps">{themeLabel(b.theme)}</span>
+                  {b.custom && <Badge tone="accent">{t('principles.mine')}</Badge>}
                 </div>
-                <h2 className="h3">{b.title}</h2>
+                <h2 className="h3" lang={b.custom ? undefined : 'en'} dir="auto">
+                  {b.title}
+                </h2>
                 <p className="meta">
                   {b.author}
-                  {b.year > 0 ? `, ${b.year}` : b.year < 0 ? `, c. ${-b.year} BCE` : ''}
+                  {b.year > 0 ? `, ${b.year}` : b.year < 0 ? `, ${t('principles.bce', { year: -b.year })}` : ''}
                 </p>
                 {b.note && <p className="muted">{b.note}</p>}
                 <div className="row between gap-2" style={{ marginTop: 'auto' }}>
@@ -390,12 +411,12 @@ export default function Principles() {
                       setTab('principles');
                     }}
                   >
-                    {n} principle{n === 1 ? '' : 's'}
+                    {t('principles.count', { count: n })}
                   </button>
                   {b.custom && (
                     <span className="row gap-1">
-                      <Button size="sm" variant="ghost" icon={Pencil} aria-label={`Edit ${b.title}`} onClick={() => setEditing({ kind: 'book', item: b })} />
-                      <Button size="sm" variant="ghost" icon={Trash2} aria-label={`Delete ${b.title}`} onClick={() => del('book', b)} />
+                      <Button size="sm" variant="ghost" icon={Pencil} aria-label={t('principles.editItem', { name: b.title })} onClick={() => setEditing({ kind: 'book', item: b })} />
+                      <Button size="sm" variant="ghost" icon={Trash2} aria-label={t('principles.deleteItem', { name: b.title })} onClick={() => del('book', b)} />
                     </span>
                   )}
                 </div>
@@ -407,21 +428,21 @@ export default function Principles() {
 
       <TabPanel id="tags" active={tab === 'tags'}>
         {Object.keys(lib.tags).length === 0 ? (
-          <Empty icon={LibraryIcon} title="No tagged seasons yet">
-            Open any season and use "Your tags and principles" to tag it or link principles from your library. Tagged seasons appear here and in the season search.
+          <Empty icon={LibraryIcon} title={t('principles.noTagsTitle')}>
+            {t('principles.noTagsBody')}
           </Empty>
         ) : (
           <div className="stack gap-4">
-            {tags.map((t) => {
+            {tags.map((tg) => {
               const ids = Object.entries(lib.tags)
-                .filter(([, x]) => (x.tags || []).includes(t))
+                .filter(([, x]) => (x.tags || []).includes(tg))
                 .map(([id]) => id)
                 .filter((id) => caseById[id]);
               if (!ids.length) return null;
               return (
-                <section key={t} className="panel panel-pad stack gap-2">
+                <section key={tg} className="panel panel-pad stack gap-2">
                   <h2 className="h3 row gap-2">
-                    <Tag size={16} aria-hidden="true" /> {t}
+                    <Tag size={16} aria-hidden="true" /> {tg}
                   </h2>
                   <div className="badges">
                     {ids.map((id) => (
@@ -430,8 +451,8 @@ export default function Principles() {
                       </Link>
                     ))}
                   </div>
-                  <Link to={`/cases?tag=${encodeURIComponent(t)}`} className="link meta">
-                    Show in seasons
+                  <Link to={`/cases?tag=${encodeURIComponent(tg)}`} className="link meta">
+                    {t('principles.showInSeasons')}
                   </Link>
                 </section>
               );
@@ -445,13 +466,14 @@ export default function Principles() {
 
 /** "Your tags and principles" box shown on every season. */
 export function CaseTagEditor({ c }) {
+  const { t } = useTranslation();
   const lib = useLibrary();
   const mine = lib.tags[c.id] || { tags: [], principles: [] };
   const [text, setText] = useState('');
   const [pq, setPq] = useState('');
-  const known = allTags(lib).filter((t) => !mine.tags.includes(t));
-  const addTag = (t) => {
-    const list = splitTags(t);
+  const known = allTags(lib).filter((x) => !mine.tags.includes(x));
+  const addTag = (value) => {
+    const list = splitTags(value);
     if (list.length) setCaseTags(c.id, { tags: [...mine.tags, ...list] });
     setText('');
   };
@@ -459,18 +481,18 @@ export function CaseTagEditor({ c }) {
   return (
     <section className="panel panel-pad stack gap-3" aria-labelledby={`tags-${c.id}`}>
       <h2 id={`tags-${c.id}`} className="section-title row gap-2">
-        <Tag size={16} aria-hidden="true" /> Your tags and principles
+        <Tag size={16} aria-hidden="true" /> {t('principles.tagEditor.title')}
       </h2>
       <div className="badges">
-        {mine.tags.map((t) => (
-          <span key={t} className="badge tag-badge">
-            {t}
-            <button type="button" className="chip-x" aria-label={`Remove tag ${t}`} onClick={() => setCaseTags(c.id, { tags: mine.tags.filter((x) => x !== t) })}>
+        {mine.tags.map((tg) => (
+          <span key={tg} className="badge tag-badge">
+            {tg}
+            <button type="button" className="chip-x" aria-label={t('principles.tagEditor.removeTag', { tag: tg })} onClick={() => setCaseTags(c.id, { tags: mine.tags.filter((x) => x !== tg) })}>
               <X size={12} aria-hidden="true" />
             </button>
           </span>
         ))}
-        {!mine.tags.length && <span className="meta">No tags yet.</span>}
+        {!mine.tags.length && <span className="meta">{t('principles.tagEditor.noTags')}</span>}
       </div>
       <form
         className="row gap-2 wrap"
@@ -479,18 +501,18 @@ export function CaseTagEditor({ c }) {
           addTag(text);
         }}
       >
-        <input className="input grow" style={{ minWidth: 160 }} aria-label="Add a tag" placeholder="Add tags, comma separated" value={text} onChange={(e) => setText(e.target.value)} list={`tag-list-${c.id}`} />
+        <input className="input grow" style={{ minWidth: 160 }} aria-label={t('principles.tagEditor.addTag')} placeholder={t('principles.tagEditor.placeholder')} value={text} onChange={(e) => setText(e.target.value)} list={`tag-list-${c.id}`} />
         <datalist id={`tag-list-${c.id}`}>
-          {known.map((t) => (
-            <option key={t} value={t} />
+          {known.map((x) => (
+            <option key={x} value={x} />
           ))}
         </datalist>
         <Button type="submit" size="sm" icon={Plus} disabled={!text.trim()}>
-          Tag
+          {t('principles.tagEditor.tag')}
         </Button>
       </form>
       <div className="stack gap-2">
-        <span className="meta">Principles you linked to this season</span>
+        <span className="meta">{t('principles.tagEditor.linked')}</span>
         <div className="badges">
           {mine.principles.map((id) => {
             const p = lib.principleById[id];
@@ -498,15 +520,15 @@ export function CaseTagEditor({ c }) {
             return (
               <span key={id} className="badge">
                 <Link to={`/principles#${id}`}>{p.name}</Link>
-                <button type="button" className="chip-x" aria-label={`Unlink ${p.name}`} onClick={() => setCaseTags(c.id, { principles: mine.principles.filter((x) => x !== id) })}>
+                <button type="button" className="chip-x" aria-label={t('principles.picker.unlink', { name: p.name })} onClick={() => setCaseTags(c.id, { principles: mine.principles.filter((x) => x !== id) })}>
                   <X size={12} aria-hidden="true" />
                 </button>
               </span>
             );
           })}
-          {!mine.principles.length && <span className="meta">None yet.</span>}
+          {!mine.principles.length && <span className="meta">{t('principles.tagEditor.none')}</span>}
         </div>
-        <input className="input" type="search" aria-label="Link a principle" placeholder="Search your library to link a principle" value={pq} onChange={(e) => setPq(e.target.value)} />
+        <input className="input" type="search" aria-label={t('principles.tagEditor.link')} placeholder={t('principles.tagEditor.linkPlaceholder')} value={pq} onChange={(e) => setPq(e.target.value)} />
         {hits.length > 0 && (
           <ul className="pick-list">
             {hits.map((p) => (
@@ -525,7 +547,7 @@ export function CaseTagEditor({ c }) {
           </ul>
         )}
         <Link to="/principles" className="link meta">
-          Add your own principle or book
+          {t('principles.tagEditor.addOwn')}
         </Link>
       </div>
     </section>

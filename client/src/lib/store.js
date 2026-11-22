@@ -5,6 +5,7 @@ import { DIMENSION_IDS } from '@shared/dimensions.js';
 import { deepNoEmDash } from '@shared/text.js';
 import { sanitizeState, MAX_BACKUP_BYTES } from '@shared/stateSchema.js';
 import { sanitizeCase } from '@shared/caseSchema.js';
+import { t } from '../i18n/index.js';
 
 const KEY = 'bizsim.state.v1';
 const listeners = new Set();
@@ -114,6 +115,37 @@ export function addResearchHistory(entry) {
   setState((s) => ({ ...s, researchHistory: [{ ...entry, at: new Date().toISOString() }, ...s.researchHistory].slice(0, 200) }));
 }
 
+export function removeResearchHistoryItem(at, query) {
+  setState((s) => ({
+    ...s,
+    researchHistory: (s.researchHistory || []).filter(
+      (item) => !(item.at === at && item.query === query)
+    ),
+  }));
+}
+
+export function removeRunHistoryEntry(runId, checkpointId) {
+  setState((s) => {
+    const runs = (s.runs || [])
+      .map((run) => {
+        if (run.id !== runId) return run;
+        if (!checkpointId) return null;
+        const choices = (run.choices || []).filter((c) => c.checkpointId !== checkpointId);
+        return choices.length ? { ...run, choices } : null;
+      })
+      .filter(Boolean);
+    return { ...s, runs };
+  });
+}
+
+export function clearAnalysisHistory() {
+  setState((s) => ({
+    ...s,
+    researchHistory: [],
+    runs: [],
+  }));
+}
+
 export function saveGeneratedCase(raw) {
   // Server output is validated there; clean it again here like any outside data.
   const r = sanitizeCase(raw);
@@ -137,17 +169,17 @@ export function exportState() {
  * Returns { kind, value, report, exportedAt } for the preview, or throws.
  */
 export function previewImport(text) {
-  if (typeof text !== 'string' || !text.trim()) throw new Error('The file is empty.');
-  if (text.length > MAX_BACKUP_BYTES) throw new Error('The file is too large to be a BIZSIM backup.');
+  if (typeof text !== 'string' || !text.trim()) throw new Error(t('backup.empty'));
+  if (text.length > MAX_BACKUP_BYTES) throw new Error(t('backup.tooLarge'));
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('This file is not a BIZSIM backup (it is not valid JSON).');
+    throw new Error(t('backup.notJson'));
   }
   const kind = parsed?.kind === 'transfer' ? 'transfer' : 'backup';
   const r = sanitizeState(parsed, { kind });
-  if (!r.ok) throw new Error(r.error);
+  if (!r.ok) throw new Error(r.code === 'version' ? t('backup.version', { version: r.version }) : t('backup.notBizsim'));
   return { kind, value: r.value, report: r.report, exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt.slice(0, 40) : null };
 }
 
@@ -263,11 +295,11 @@ export function transferPayload({ includeCases = true } = {}) {
 
 /** Merge progress from another device into this one (nothing is deleted). */
 export function mergeState(incomingRaw, { trusted = false } = {}) {
-  if (incomingRaw?.app !== 'BIZSIM') throw new Error('This is not BIZSIM progress.');
+  if (incomingRaw?.app !== 'BIZSIM') throw new Error(t('backup.notProgress'));
   let incoming = incomingRaw;
   if (!trusted) {
     const r = sanitizeState(incomingRaw, { kind: 'transfer' });
-    if (!r.ok) throw new Error(r.error);
+    if (!r.ok) throw new Error(r.code === 'version' ? t('backup.version', { version: r.version }) : t('backup.notBizsim'));
     incoming = r.value;
   }
   const byKey = (list, key) => {
@@ -332,6 +364,12 @@ export const DEFAULT_COLLECTIONS = [
 ];
 
 /** Collections with the defaults present (created on first use, never re-added once removed). */
+/** Display name: built-in collections follow the interface language until the user renames them. */
+export function collectionName(c) {
+  const d = DEFAULT_COLLECTIONS.find((x) => x.id === c.id);
+  return c.builtIn && d && c.name === d.name ? t(`collections.defaults.${c.id}`) : c.name;
+}
+
 const colCache = new WeakMap();
 export function collectionsOf(s) {
   // Cached per state object so React's store subscription sees a stable value.
@@ -362,10 +400,10 @@ export function toggleInCollection(collectionId, item) {
 }
 export function createCollection(name) {
   const clean = String(name || '').trim().slice(0, 60);
-  if (!clean) throw new Error('Give the collection a name.');
+  if (!clean) throw new Error(t('collections.needName'));
   let id = '';
   withCollections((cols) => {
-    if (cols.some((c) => c.name.toLowerCase() === clean.toLowerCase())) throw new Error('A collection with that name already exists.');
+    if (cols.some((c) => collectionName(c).toLowerCase() === clean.toLowerCase())) throw new Error(t('collections.nameTaken'));
     id = `u-${slug(clean) || 'list'}-${uid().slice(0, 4)}`;
     return [...cols, { id, name: clean, createdAt: now(), items: [] }];
   });
@@ -373,9 +411,9 @@ export function createCollection(name) {
 }
 export function renameCollection(id, name) {
   const clean = String(name || '').trim().slice(0, 60);
-  if (!clean) throw new Error('Give the collection a name.');
+  if (!clean) throw new Error(t('collections.needName'));
   withCollections((cols) => {
-    if (cols.some((c) => c.id !== id && c.name.toLowerCase() === clean.toLowerCase())) throw new Error('A collection with that name already exists.');
+    if (cols.some((c) => c.id !== id && collectionName(c).toLowerCase() === clean.toLowerCase())) throw new Error(t('collections.nameTaken'));
     return cols.map((c) => (c.id === id ? { ...c, name: clean } : c));
   });
 }

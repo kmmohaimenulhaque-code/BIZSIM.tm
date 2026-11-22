@@ -1,0 +1,102 @@
+name: Build BIZSIM apps
+
+# Builds every platform on GitHub's free runners. Push a tag like v1.1.0, or run
+# it manually from the Actions tab. Download the results from the run's
+# "Artifacts" section.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: win }
+          - { os: macos-latest, target: mac }
+          - { os: ubuntu-latest, target: linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run check
+      - run: npm run dist:${{ matrix.target }} -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false # unsigned; add signing secrets for store distribution
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bizsim-${{ matrix.target }}
+          path: |
+            release/*.exe
+            release/*.zip
+            release/*.dmg
+            release/*.AppImage
+            release/*.pkg
+            release/*.tar.gz
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+        env: { ELECTRON_SKIP_BINARY_DOWNLOAD: 1 }
+      - run: npm run build
+        env: { VITE_API_BASE: '${{ vars.BIZSIM_API_URL }}' } # optional default server
+      - run: |
+          [ -d android ] || npx cap add android
+          npx cap sync android
+          node scripts/prepare-mobile.mjs
+      - run: cd android && ./gradlew assembleRelease
+      - name: Sign APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          APK=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          $BT/zipalign -f -p 4 $APK aligned.apk
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > release.jks
+            $BT/apksigner sign --ks release.jks --ks-key-alias bizsim --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out BIZSIM-android.apk aligned.apk
+          else
+            keytool -genkeypair -keystore debug.jks -alias bizsim -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=BIZSIM"
+            $BT/apksigner sign --ks debug.jks --ks-pass pass:android --out BIZSIM-android.apk aligned.apk
+          fi
+      - uses: actions/upload-artifact@v4
+        with: { name: bizsim-android, path: BIZSIM-android.apk }
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+        env: { ELECTRON_SKIP_BINARY_DOWNLOAD: 1 }
+      - run: npm run build
+        env: { VITE_API_BASE: '${{ vars.BIZSIM_API_URL }}' }
+      # The Xcode project (ios/, Swift Package Manager, no CocoaPods) is in the repo.
+      - run: |
+          [ -d ios/App ] || npx cap add ios --packagemanager SPM
+          npx cap sync ios
+          node scripts/prepare-mobile.mjs
+      # Unsigned build: install with Sideloadly or AltStore using your Apple ID,
+      # or add signing in Xcode for TestFlight / App Store.
+      - name: Build unsigned IPA
+        run: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          mkdir -p Payload && cp -R build/App.xcarchive/Products/Applications/App.app Payload/
+          zip -qry ../../BIZSIM-ios-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with: { name: bizsim-ios, path: BIZSIM-ios-unsigned.ipa }

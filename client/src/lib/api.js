@@ -1,5 +1,6 @@
 import { claimProof, sessionKey, rotatedKey, sign } from '../../../shared/sha256.js';
 import { seal } from '../../../shared/sealed.js';
+import { t } from '../i18n/index.js';
 // API client. Works same-origin (web, desktop) or against a configured server
 // (mobile builds, or a self-hosted backend) set in Settings.
 const KEY = 'bizsim.apiBase';
@@ -73,12 +74,12 @@ export function parsePairLink(text) {
   try {
     u = new URL(String(text).trim());
   } catch {
-    throw new Error('This is not a BIZSIM pairing code.');
+    throw new Error(t('pairing.notCode'));
   }
-  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('This is not a BIZSIM pairing code.');
-  if (u.searchParams.get('pair')) throw new Error('This pairing code is from an older BIZSIM. Update the desktop app to 1.6 and scan its new code.');
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error(t('pairing.notCode'));
+  if (u.searchParams.get('pair')) throw Object.assign(new Error(t('pairing.oldCode')), { code: 'oldCode' });
   const m = /(?:^#|&)pair=([A-Za-z0-9_-]{4,40})\.([A-Za-z0-9_-]{16,80})(?:&|$)/.exec(u.hash);
-  if (!m) throw new Error('This is not a BIZSIM pairing code.');
+  if (!m) throw new Error(t('pairing.notCode'));
   return { origin: u.origin, code: m[1], secret: m[2] };
 }
 
@@ -95,7 +96,7 @@ export async function pairFromUrl(text) {
       body: JSON.stringify({ code, ts, nonce, device: deviceName(), proof: claimProof(secret, code, ts, nonce) }),
     });
   } catch {
-    throw new Error('Could not reach the computer. Check both devices are on the same Wi-Fi and that BIZSIM is allowed through the computer firewall.');
+    throw new Error(t('pairing.unreachable'));
   }
   let data = {};
   try {
@@ -103,7 +104,7 @@ export async function pairFromUrl(text) {
   } catch {
     /* not JSON */
   }
-  if (!res.ok || !data.sessionId) throw new Error(data.error || `Pairing failed (${res.status})`);
+  if (!res.ok || !data.sessionId) throw new Error(pairingMessage(data) || t('pairing.failed', { status: res.status }));
   savePairing({ base: origin, sessionId: data.sessionId, key: sessionKey(secret, data.sessionId), pairedAt: Date.now(), rotatedAt: Date.now() });
   const sameOrigin = typeof location !== 'undefined' && location.origin === origin;
   setApiBase(sameOrigin ? '' : origin);
@@ -178,10 +179,16 @@ async function authHeaders(method, path, body) {
   return h;
 }
 
+/** Localised text for a pairing error code from the computer, falling back to its own message. */
+function pairingMessage(data) {
+  const code = data?.code === 'expired' && /code/i.test(data?.error || '') ? 'codeExpired' : data?.code;
+  return code && ['revoked', 'expired', 'unpaired', 'signature', 'clock', 'codeExpired', 'invalid', 'replay'].includes(code) ? t(`pairing.codes.${code}`) : data?.error;
+}
+
 function pairingError(res, data) {
   if (res.status === 401 && activePairing() && ['revoked', 'expired', 'unpaired', 'signature'].includes(data?.code)) {
     clearPairing();
-    return new Error(`${data.error || 'This device is no longer paired.'}`);
+    return new Error(pairingMessage(data) || t('pairing.noLongerPaired'));
   }
   return null;
 }
@@ -222,10 +229,10 @@ export const isNativeApp = () => Boolean(typeof window !== 'undefined' && window
 
 /** The phone apps have no built-in server: they need a paired computer or a server address. */
 export const hasServer = () => Boolean(apiBase()) || !isNativeApp();
-export const NO_SERVER = 'No BIZSIM server connected. Pair this phone with the desktop app (Settings, Connect to a computer) or set a server address.';
+export const noServerMessage = () => t('server.none');
 
 async function request(path, opts = {}) {
-  if (!hasServer()) throw new Error(NO_SERVER);
+  if (!hasServer()) throw new Error(noServerMessage());
   const method = (opts.method || 'GET').toUpperCase();
   const body = typeof opts.body === 'string' ? opts.body : '';
   let res;
@@ -235,11 +242,11 @@ async function request(path, opts = {}) {
       headers: { 'Content-Type': 'application/json', ...(await authHeaders(method, path, body)), ...(opts.headers || {}) },
     });
   } catch {
-    throw new Error(activePairing() ? 'Could not reach your computer. Check it is on, BIZSIM is open with phone access turned on, and both devices share the same Wi-Fi.' : 'Could not reach the BIZSIM server.');
+    throw new Error(activePairing() ? t('server.unreachableComputer') : t('server.unreachable'));
   }
   // A web host that is not BIZSIM (or the phone's own file server) answers with HTML.
   if (!/json/i.test(res.headers.get('content-type') || '')) {
-    throw new Error(res.ok ? 'That address did not answer like a BIZSIM server.' : `Request failed (${res.status})`);
+    throw new Error(res.ok ? t('server.notBizsim') : t('server.requestFailed', { status: res.status }));
   }
   let data = null;
   try {
@@ -247,14 +254,14 @@ async function request(path, opts = {}) {
   } catch {
     /* malformed JSON */
   }
-  if (!res.ok) throw pairingError(res, data) || new Error(data?.error || `Request failed (${res.status})`);
-  if (data == null) throw new Error('The server sent an unreadable reply.');
+  if (!res.ok) throw pairingError(res, data) || new Error(data?.error || t('server.requestFailed', { status: res.status }));
+  if (data == null) throw new Error(t('server.unreadable'));
   return data;
 }
 
 export const getStatus = async () => {
   const s = await request('/api/status');
-  if (!s || typeof s !== 'object' || !s.ai || !s.version) throw new Error('That address did not answer like a BIZSIM server.');
+  if (!s || typeof s !== 'object' || !s.ai || !s.version) throw new Error(t('server.notBizsim'));
   return { ...s, images: s.images || {}, ai: { enabled: false, ...s.ai } };
 };
 export const getKeys = () => request('/api/keys');
@@ -286,11 +293,11 @@ export function streamJobEvents(id, from, { onEvent, onClose }) {
   };
   (async () => {
     try {
-      if (!hasServer()) throw Object.assign(new Error(NO_SERVER), { gone: true });
+      if (!hasServer()) throw Object.assign(new Error(noServerMessage()), { gone: true });
       const path = `/api/jobs/${encodeURIComponent(id)}/events?from=${from}`;
       const res = await fetch(`${apiBase()}${path}`, { headers: { Accept: 'text/event-stream', ...(await authHeaders('GET', path, '')) }, signal: ctrl.signal });
       if (!res.ok) {
-        let msg = `The task could not be followed (${res.status})`;
+        let msg = t('server.followFailed', { status: res.status });
         let data = null;
         try {
           data = await res.json();
@@ -331,10 +338,10 @@ export function streamJobEvents(id, from, { onEvent, onClose }) {
           if (event === 'end') return close();
         }
       }
-      close(new Error('Connection closed'));
+      close(new Error(t('server.connectionClosed')));
     } catch (e) {
       if (e.name === 'AbortError') return close();
-      close(e.gone ? e : new Error('Lost connection to the BIZSIM server'));
+      close(e.gone ? e : new Error(t('server.lostConnection')));
     }
   })();
   return () => {

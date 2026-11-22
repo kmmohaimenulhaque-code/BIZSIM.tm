@@ -1,0 +1,315 @@
+{
+ "schema": 1,
+ "caseId": "season-c138",
+ "locale": "es",
+ "status": "machine",
+ "method": "Machine-assisted translation of the English season text. Not yet reviewed by a native speaker.",
+ "sourceRevision": "5840b586893a6846",
+ "translatedAt": "2026-11-18",
+ "fields": {
+  "title": "M-Pesa, dinero móvil",
+  "tagline": "Un piloto que se reorienta hasta convertirse en un sistema nacional de pagos.",
+  "reading": "Compárelo con bKash (caso siguiente)",
+  "situation": {
+   "headline": "La mayoría de los kenianos no tiene cuenta bancaria; enviar dinero es caro.",
+   "role": "Usted asesora a Safaricom y Vodafone en Kenia.",
+   "stakes": "Si el dinero móvil puede convertirse en infraestructura.",
+   "context": [
+    "Vodafone recibió financiación del gobierno británico para un piloto.",
+    "El piloto servía para pagar cuotas de préstamos de microfinanzas."
+   ]
+  },
+  "concept": {
+   "framework": "Seguir el comportamiento de los usuarios",
+   "explanation": "Observar cómo usan realmente un producto puede revelar una oportunidad mayor."
+  },
+  "evidence": [
+   {
+    "label": "Piloto",
+    "value": "2005",
+    "note": "Pagos de microfinanzas."
+   },
+   {
+    "label": "Lanzamiento",
+    "value": "Marzo de 2007",
+    "note": "Kenia."
+   }
+  ],
+  "episodes": {
+   "1": {
+    "title": "Un piloto de pagos de microfinanzas",
+    "dateLabel": "2005",
+    "insight": "El dinero público redujo el riesgo de un experimento que la empresa privada no habría financiado sola."
+   },
+   "2": {
+    "title": "Giro hacia las transferencias entre personas",
+    "dateLabel": "2006–2007",
+    "insight": "Un precio simple y previsible generó confianza en un servicio financiero nuevo."
+   },
+   "3": {
+    "title": "Una red de agentes en tiendas",
+    "dateLabel": "2007–2010",
+    "insight": "La logística del efectivo fue la columna vertebral oculta del dinero móvil."
+   },
+   "4": {
+    "title": "La columna vertebral de los pagos en Kenia",
+    "dateLabel": "Década de 2010",
+    "insight": "Las transferencias construyeron la red; los servicios financieros se apoyaron en ella."
+   }
+  },
+  "checkpoints": {
+   "e1": {
+    "title": "Un piloto de pagos de microfinanzas",
+    "dateLabel": "2005",
+    "prompt": "¿Cómo debe funcionar el piloto?",
+    "context": "Los clientes de microfinanzas pagan préstamos.",
+    "outcome": "El piloto probó el pago de préstamos con la institución de microfinanzas Faulu Kenya.",
+    "options": {
+     "a": {
+      "label": "Piloto de pagos con Faulu Kenya",
+      "summary": "Probar los pagos móviles.",
+      "consequence": "Aprendizaje útil.",
+      "tradeoffs": "Aprender.",
+      "risks": "Alcance limitado."
+     },
+     "b": {
+      "label": "Lanzamiento completo",
+      "summary": "Rapidez.",
+      "consequence": "Arriesgado.",
+      "tradeoffs": "Escala.",
+      "risks": "Sin probar."
+     },
+     "c": {
+      "label": "Piloto con bancos",
+      "summary": "Hacer la prueba a través de bancos.",
+      "consequence": "Resultado mixto.",
+      "tradeoffs": "Confianza.",
+      "risks": "Lentitud."
+     }
+    }
+   },
+   "e1x": {
+    "title": "Un piloto de pagos de microfinanzas",
+    "dateLabel": "2005",
+    "prompt": "¿Quién debe financiar el piloto?",
+    "context": "Vodafone y Safaricom son prudentes.",
+    "outcome": "El desarrollo de M-Pesa contó con un fondo de desafío del Departamento para el Desarrollo Internacional del Reino Unido, junto con Vodafone.",
+    "options": {
+     "a": {
+      "label": "Usar un fondo de desafío del gobierno británico (DFID)",
+      "summary": "Combinar ayuda pública con dinero de Vodafone.",
+      "consequence": "El piloto se realiza.",
+      "tradeoffs": "Menor riesgo.",
+      "risks": "Burocracia."
+     },
+     "b": {
+      "label": "Solo Vodafone",
+      "summary": "Control.",
+      "consequence": "No hay piloto.",
+      "tradeoffs": "Sencillez.",
+      "risks": "Demasiado arriesgado internamente."
+     },
+     "c": {
+      "label": "Bancos",
+      "summary": "Experiencia.",
+      "consequence": "Resultado mixto.",
+      "tradeoffs": "Capital.",
+      "risks": "Lentitud."
+     }
+    }
+   },
+   "e2": {
+    "title": "Giro hacia las transferencias entre personas",
+    "dateLabel": "2006–2007",
+    "prompt": "Los usuarios se envían dinero entre sí. ¿Qué hace usted?",
+    "context": "El comportamiento difiere del plan.",
+    "outcome": "M-Pesa se lanzó en marzo de 2007 centrado en las transferencias entre personas (“envía dinero a casa”).",
+    "options": {
+     "a": {
+      "label": "Girar hacia las transferencias entre personas",
+      "summary": "Enviar dinero a casa.",
+      "consequence": "Crecimiento.",
+      "tradeoffs": "Demanda.",
+      "risks": "Cambio."
+     },
+     "b": {
+      "label": "Seguir con los préstamos",
+      "summary": "El plan.",
+      "consequence": "Débil.",
+      "tradeoffs": "Foco.",
+      "risks": "Pequeño."
+     },
+     "c": {
+      "label": "Detener el piloto",
+      "summary": "Terminarlo por salirse del plan.",
+      "consequence": "Débil.",
+      "tradeoffs": "Sencillo.",
+      "risks": "Oportunidad perdida."
+     }
+    }
+   },
+   "e2x": {
+    "title": "Giro hacia las transferencias entre personas",
+    "dateLabel": "2006–2007",
+    "prompt": "¿Cómo debe fijar Safaricom el precio de las transferencias?",
+    "context": "Los usuarios son pobres.",
+    "outcome": "M-Pesa cobraba sobre todo por enviar y retirar dinero, mientras que los depósitos eran gratuitos.",
+    "options": {
+     "a": {
+      "label": "Cobrar una pequeña tarifa al remitente; depósitos gratis",
+      "summary": "Tarifas simples y bajas.",
+      "consequence": "Crecimiento.",
+      "tradeoffs": "Adopción.",
+      "risks": "Ingresos bajos."
+     },
+     "b": {
+      "label": "Tarifas altas",
+      "summary": "Ingresos.",
+      "consequence": "Débil.",
+      "tradeoffs": "Beneficio.",
+      "risks": "Adopción lenta."
+     },
+     "c": {
+      "label": "Gratis",
+      "summary": "Adopción.",
+      "consequence": "Insostenible.",
+      "tradeoffs": "Alcance.",
+      "risks": "Sin ingresos."
+     }
+    }
+   },
+   "e3": {
+    "title": "Una red de agentes en tiendas",
+    "dateLabel": "2007–2010",
+    "prompt": "¿Cómo ingresan y retiran efectivo las personas?",
+    "context": "Hay pocos bancos.",
+    "outcome": "M-Pesa construyó una gran red de agentes, sobre todo en tiendas.",
+    "options": {
+     "a": {
+      "label": "Crear una red de agentes en tiendas",
+      "summary": "Los tenderos manejan el efectivo.",
+      "consequence": "Red.",
+      "tradeoffs": "Alcance.",
+      "risks": "Gestión de liquidez."
+     },
+     "b": {
+      "label": "Solo bancos",
+      "summary": "Confianza.",
+      "consequence": "Débil.",
+      "tradeoffs": "Seguridad.",
+      "risks": "Limitado."
+     },
+     "c": {
+      "label": "Usar cajeros automáticos",
+      "summary": "Depender de los cajeros.",
+      "consequence": "Resultado mixto.",
+      "tradeoffs": "Comodidad.",
+      "risks": "Costo."
+     }
+    }
+   },
+   "e3x": {
+    "title": "Una red de agentes en tiendas",
+    "dateLabel": "2007–2010",
+    "prompt": "¿Cómo deben gestionarse los agentes?",
+    "context": "Los agentes manejan efectivo.",
+    "outcome": "M-Pesa organizó a los agentes mediante agregadores y fijó reglas para gestionar la liquidez en efectivo.",
+    "options": {
+     "a": {
+      "label": "Usar agentes principales y reglas",
+      "summary": "Organizar a los agentes bajo agregadores con reglas de liquidez.",
+      "consequence": "Efectivo fiable.",
+      "tradeoffs": "Escala.",
+      "risks": "Complejidad."
+     },
+     "b": {
+      "label": "Sin estructura",
+      "summary": "Libertad.",
+      "consequence": "Desconfianza.",
+      "tradeoffs": "Sencillez.",
+      "risks": "Falta de efectivo."
+     },
+     "c": {
+      "label": "Solo puntos propios",
+      "summary": "Control.",
+      "consequence": "Pequeño.",
+      "tradeoffs": "Calidad.",
+      "risks": "Lentitud."
+     }
+    }
+   },
+   "e4": {
+    "title": "La columna vertebral de los pagos en Kenia",
+    "dateLabel": "Década de 2010",
+    "prompt": "¿En qué se convierte M-Pesa?",
+    "context": "El uso está muy extendido.",
+    "outcome": "M-Pesa se volvió central en la economía de Kenia; una investigación de Suri y Jack lo vinculó con la reducción de la pobreza.",
+    "options": {
+     "a": {
+      "label": "La columna vertebral de los pagos en Kenia",
+      "summary": "Facturas, salarios, ahorro, préstamos.",
+      "consequence": "Infraestructura.",
+      "tradeoffs": "Omnipresencia.",
+      "risks": "Regulación."
+     },
+     "b": {
+      "label": "Seguir como servicio de nicho",
+      "summary": "Limitarlo a las remesas.",
+      "consequence": "Débil.",
+      "tradeoffs": "Sencillo.",
+      "risks": "Pequeño."
+     },
+     "c": {
+      "label": "Vender M-Pesa",
+      "summary": "Salir vendiendo a un comprador.",
+      "consequence": "Resultado mixto.",
+      "tradeoffs": "Salida.",
+      "risks": "Pérdida."
+     }
+    }
+   },
+   "e4x": {
+    "title": "La columna vertebral de los pagos en Kenia",
+    "dateLabel": "2012",
+    "prompt": "¿Debe M-Pesa añadir ahorro y préstamos?",
+    "context": "Los usuarios quieren crédito.",
+    "outcome": "Safaricom y Commercial Bank of Africa lanzaron en 2012 M-Shwari, un producto móvil de ahorro y préstamo.",
+    "options": {
+     "a": {
+      "label": "Lanzar M-Shwari con un banco",
+      "summary": "Ofrecer ahorro y préstamos por el móvil.",
+      "consequence": "Inclusión financiera.",
+      "tradeoffs": "Servicios nuevos.",
+      "risks": "Riesgo."
+     },
+     "b": {
+      "label": "Solo transferencias",
+      "summary": "Foco.",
+      "consequence": "Resultado mixto.",
+      "tradeoffs": "Sencillez.",
+      "risks": "Oportunidad perdida."
+     },
+     "c": {
+      "label": "Convertirse en banco",
+      "summary": "Control.",
+      "consequence": "Difícil.",
+      "tradeoffs": "Propiedad.",
+      "risks": "Regulación."
+     }
+    }
+   }
+  },
+  "outcome": {
+   "summary": "M-Pesa empezó como un piloto de microfinanzas, giró hacia las transferencias, creó una red de agentes y se convirtió en la columna vertebral de los pagos en Kenia.",
+   "secondOrder": [
+    "El dinero móvil se extendió por África.",
+    "Los bancos se adaptaron."
+   ],
+   "baseRate": "La mayoría de los pilotos se quedan pequeños; seguir el comportamiento de los usuarios fue lo que liberó el potencial de M-Pesa.",
+   "lessons": [
+    "Observe lo que los usuarios hacen de verdad.",
+    "Los agentes hacen que las redes funcionen."
+   ]
+  }
+ }
+}

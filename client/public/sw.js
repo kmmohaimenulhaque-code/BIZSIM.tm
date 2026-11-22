@@ -1,6 +1,6 @@
 // BIZSIM service worker: app shell works offline; curated cases are bundled.
 // Live research and images always go to the network.
-const VERSION = 'bizsim-v3';
+const VERSION = 'bizsim-v4';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg'];
 
 self.addEventListener('install', (e) => {

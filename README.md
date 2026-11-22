@@ -5,7 +5,15 @@ Play real business history as **seasons of four episodes, each made of two or mo
 
 No accounts. No tracking. Your progress stays on your devices.
 
-**Version 1.6.0** · Windows · macOS · Linux · Android · iPhone/iPad · Web
+**Version 1.7.0** · Windows · macOS · Linux · Android · iPhone/iPad · Web
+
+### New in 1.7.0
+
+- **15 interface languages plus English (UK)**: English (US), English (UK), বাংলা, Español, Português (Brasil), Français, العربية, हिन्दी, 简体中文, 日本語, Deutsch, Русский, Bahasa Indonesia, Türkçe, 한국어, اردو. Choose in Settings → Language; switching is instant and never touches your progress. Right-to-left layout for Arabic and Urdu.
+- AI-written seasons (live research, chat builder) are written in your language.
+- All translations are **machine-assisted and not yet reviewed** by native speakers. Built-in seasons are English, apart from a one-season sample in Bengali and Spanish. See [docs/I18N.md](docs/I18N.md).
+
+Full notes: [docs/RELEASE-NOTES-1.7.md](docs/RELEASE-NOTES-1.7.md).
 
 ### New in 1.6.0
 
@@ -44,11 +52,11 @@ Provenance is always visible: each season's kind of account (documented, scriptu
 
 | Platform | File | Notes |
 |---|---|---|
-| **Windows 10/11** | `BIZSIM-Setup-1.6.0-windows-x64.exe` | Unsigned: on the blue SmartScreen box click *More info → Run anyway*. The installer asks **just for me / all users** and lets you **choose the install folder**. Allow the firewall prompt only if you want phone access. |
-| **macOS (Apple Silicon M1–M4)** | `BIZSIM-1.6.0-mac-arm64.zip` | Unzip and put `BIZSIM.app` **in any folder you like** (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged, run `xattr -cr /path/to/BIZSIM.app` once in Terminal. |
-| **macOS (Intel)** | `BIZSIM-1.6.0-mac-x64.zip` | Same as above. The GitHub Actions build also makes `.dmg` (drag anywhere) and `.pkg` (installer with *Change Install Location*). |
+| **Windows 10/11** | `BIZSIM-Setup-1.7.0-windows-x64.exe` | Unsigned: on the blue SmartScreen box click *More info → Run anyway*. The installer asks **just for me / all users** and lets you **choose the install folder**. Allow the firewall prompt only if you want phone access. |
+| **macOS (Apple Silicon M1–M4)** | `BIZSIM-1.7.0-mac-arm64.zip` | Unzip and put `BIZSIM.app` **in any folder you like** (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged, run `xattr -cr /path/to/BIZSIM.app` once in Terminal. |
+| **macOS (Intel)** | `BIZSIM-1.7.0-mac-x64.zip` | Same as above. The GitHub Actions build also makes `.dmg` (drag anywhere) and `.pkg` (installer with *Change Install Location*). |
 | **Linux** | `.AppImage` or `.tar.gz` | AppImage: put it in any folder, `chmod +x`, run. `.tar.gz`: extract anywhere and run `./bizsim`. |
-| **Android 6+** | `BIZSIM-1.6.0-android.apk` | Open the file and allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps your progress. |
+| **Android 6+** | `BIZSIM-1.7.0-android.apk` | Open the file and allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps your progress. |
 | **iPhone / iPad** | Xcode project included (`ios/`), or GitHub Actions | Apple only lets apps be compiled on a Mac. **On a Mac:** `npm install && npm run build && npx cap sync ios`, open `ios/App/App.xcodeproj`, pick your Apple ID under *Signing & Capabilities*, plug in the iPhone and press ▶ (free Apple ID: app lasts 7 days; paid developer account: TestFlight/App Store). **No Mac:** push to GitHub and the *ios* job builds an unsigned `.ipa` to install with Sideloadly/AltStore. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
 
 **Desktop apps include the server**, so everything works out of the box. **Phone apps** run all 200 seasons, the principles library, voice and QR transfer on their own; for live research and the chat builder, pair with your computer (Settings → *Connect to a computer*) or point them at a hosted server (Settings → *Server address*).
@@ -88,6 +96,7 @@ npm run dev          # hot reload: UI :5173, API :8787
 npm run check        # validate curated content (-- --urls to check every source link)
 npm test             # unit and integration tests (node --test)
 npm run check:sources  # re-fetch every cited source and refresh evidence statuses (slow, needs internet)
+npm run i18n:check   # translations: placeholders, plurals, missing keys, hard-coded text, season overlays
 ```
 
 ### Build the apps yourself
@@ -105,7 +114,7 @@ npm run build && npx cap sync ios && node scripts/prepare-mobile.mjs
 npx cap open ios                             # macOS + Xcode
 ```
 
-**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS `.ipa` on free runners, push a tag such as `v1.6.0` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
+**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS `.ipa` on free runners, push a tag such as `v1.7.0` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
 
 ### Hosting a server (Docker)
 
@@ -113,7 +122,13 @@ npx cap open ios                             # macOS + Xcode
 docker build -t bizsim .
 docker run -p 8787:8787 -e SEC_USER_AGENT="Your Name you@example.com" -e GEMINI_API_KEY=... -v bizsim-data:/data bizsim
 ```
-Set `BIZSIM_ADMIN_TOKEN` to allow saving server-wide keys from Settings remotely (send header `X-BizSim-Admin`). Without it, visitors can still use their own device keys.
+Set `BIZSIM_ADMIN_TOKEN` to allow saving server-wide keys from Settings remotely (send header `X-BizSim-Admin`).
+
+**Public website production checklist** (see [`docs/SECURITY.md`](docs/SECURITY.md) for full details):
+- Run behind an HTTPS reverse proxy (Nginx, Caddy, Cloudflare) with TLS and edge rate limits (required if running multiple instances; the built-in bounded limiter is single-process).
+- Set `CORS_ORIGINS=https://your-domain.example` explicitly (do not use `*` in production).
+- Supply AI keys server-side via environment variables (and optionally set `BIZSIM_PUBLIC_AI_TOKEN` to gate expensive AI routes); for personal BYOK and SEC EDGAR usage, users should download the official Desktop or Mobile apps rather than using a public web instance.
+- Built-in API limits: `120 req/min/IP` globally on `/api/*`, plus stricter limits on research (`8/min`), chat (`10/min`), image generation (`4/min`), image search (`30/min`), and key testing (`12/min`).
 
 ---
 

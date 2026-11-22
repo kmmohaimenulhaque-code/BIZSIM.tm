@@ -505,19 +505,7 @@ export const SEASON_IMAGES = {
   "width": 800,
   "height": 619
  },
- "season-c047": {
-  "url": "/covers/season-c047.webp",
-  "title": "Dior révolutionne la haute-couture. Paris Musées 20230526160357",
-  "creator": "Paris-Match, editeur",
-  "license": "CC0",
-  "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-  "landingUrl": "https://commons.wikimedia.org/wiki/File:Dior_r%C3%A9volutionne_la_haute-couture._Paris_Mus%C3%A9es_20230526160357.jpg",
-  "article": "Christian Dior",
-  "provider": "Wikimedia Commons",
-  "remote": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Dior_r%C3%A9volutionne_la_haute-couture._Paris_Mus%C3%A9es_20230526160357.jpg/1280px-Dior_r%C3%A9volutionne_la_haute-couture._Paris_Mus%C3%A9es_20230526160357.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-  "width": 682,
-  "height": 800
- },
+ "season-c047": null,
  "season-c048": null,
  "season-c049": {
   "url": "/covers/season-c049.webp",
@@ -586,19 +574,7 @@ export const SEASON_IMAGES = {
   "height": 582
  },
  "season-c055": null,
- "season-c056": {
-  "url": "/covers/season-c056.webp",
-  "title": "Lin-Manuel Miranda, Phillipa Soo, Leslie Odom, Jr., and Christopher Jackson, White Hous...",
-  "creator": "Amanda Lucidon",
-  "license": "Public domain",
-  "licenseUrl": null,
-  "landingUrl": "https://commons.wikimedia.org/wiki/File:Lin-Manuel_Miranda,_Phillipa_Soo,_Leslie_Odom,_Jr.,_and_Christopher_Jackson,_White_House,_March_2016.jpg",
-  "article": "Hamilton (musical)",
-  "provider": "Wikimedia Commons",
-  "remote": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Lin-Manuel_Miranda%2C_Phillipa_Soo%2C_Leslie_Odom%2C_Jr.%2C_and_Christopher_Jackson%2C_White_House%2C_March_2016.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-  "width": 800,
-  "height": 533
- },
+ "season-c056": null,
  "season-c057": {
   "url": "/covers/season-c057.webp",
   "title": "Fenty beauty logo",
@@ -612,19 +588,7 @@ export const SEASON_IMAGES = {
   "width": 387,
   "height": 258
  },
- "season-c058": {
-  "url": "/covers/season-c058.webp",
-  "title": "Taylor Swift",
-  "creator": "Dwight McCann",
-  "license": "CC BY-SA 2.5",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
-  "landingUrl": "https://commons.wikimedia.org/wiki/File:Taylor_Swift.jpg",
-  "article": "Taylor Swift masters dispute",
-  "provider": "Wikimedia Commons",
-  "remote": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Taylor_Swift.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-  "width": 552,
-  "height": 368
- },
+ "season-c058": null,
  "season-c059": {
   "url": "/covers/season-c059.webp",
   "title": "Liquid-Death-Logo-2026",
@@ -2252,19 +2216,7 @@ export const SEASON_IMAGES = {
   "width": 800,
   "height": 533
  },
- "season-c190": {
-  "url": "/covers/season-c190.webp",
-  "title": "M Perkins",
-  "creator": "Melanie Perkins",
-  "license": "CC BY-SA 2.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
-  "landingUrl": "https://commons.wikimedia.org/wiki/File:M_Perkins.jpg",
-  "article": "Melanie Perkins",
-  "provider": "Wikimedia Commons",
-  "remote": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/M_Perkins.jpg/1280px-M_Perkins.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-  "width": 533,
-  "height": 800
- },
+ "season-c190": null,
  "season-c191": {
   "url": "/covers/season-c191.webp",
   "title": "Cloudflare office entrance area",

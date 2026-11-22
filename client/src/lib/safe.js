@@ -2,6 +2,8 @@
 // imported file. React already escapes text; these cover attributes React does
 // not police (link targets and image sources).
 
+import { sanitizeImageUrl } from '@shared/imagePolicy.js';
+
 /** Returns the URL if it is an absolute http(s) link, otherwise undefined. */
 export function safeUrl(u) {
   if (typeof u !== 'string' || u.length > 2048) return undefined;
@@ -14,12 +16,9 @@ export function safeUrl(u) {
   }
 }
 
-/** Image sources: http(s), bundled /covers/ and /hero/ assets, or inline raster data URLs. */
-export function safeImageSrc(u) {
-  if (typeof u !== 'string') return undefined;
-  if (/^\/(covers|hero|generated)\/[\w./-]+$/.test(u) && !u.includes('..')) return u;
-  if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 3_000_000) return u;
-  return safeUrl(u);
+/** Image sources: validated via centralized imagePolicy (allowlisted remote hosts & safe bundled paths). */
+export function safeImageSrc(u, metaText = '') {
+  return sanitizeImageUrl(u, metaText) || undefined;
 }
 
 /** Plain text from untrusted input: strips control characters and caps length. */

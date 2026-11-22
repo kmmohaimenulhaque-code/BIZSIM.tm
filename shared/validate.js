@@ -2,6 +2,7 @@
 // time) and for AI-generated cases (at runtime, before anything reaches the user).
 import { PRINCIPLE_BY_ID } from './books.js';
 import { DIMENSION_IDS } from './dimensions.js';
+import { sanitizeImageUrl } from './imagePolicy.js';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(+n) ? +n : 0));
 
@@ -35,13 +36,26 @@ export function validateCase(input, { requireHistorical = true, episodes } = {})
 
   if (c.concept) c.concept.principles = cleanPrinciples(c.concept.principles, 'concept');
 
-  c.evidence = (c.evidence || []).filter((e) => {
+  c.evidence = (c.evidence || []).map((e) => {
     if (e.sourceId && !sourceIds.has(e.sourceId)) {
-      warnings.push(`evidence "${e.label}" removed: unknown source ${e.sourceId}`);
-      return false;
+      warnings.push(`evidence "${e.label}" downgraded: unknown source ${e.sourceId}`);
+      const { sourceId: _drop, ...rest } = e;
+      return { ...rest, unverified: true };
     }
-    return true;
+    return e;
   });
+
+  for (const field of ['cover', 'image', 'coverUrl']) {
+    if (typeof c[field] === 'string') {
+      const cleanImg = sanitizeImageUrl(c[field], c.title || '');
+      if (!cleanImg) {
+        warnings.push(`rejected unsafe ${field} URL`);
+        delete c[field];
+      } else {
+        c[field] = cleanImg;
+      }
+    }
+  }
 
   // Anti-spoiler gate: words revealing an outcome must not appear in pre-decision text.
   const spoilerWords = /\b(went bankrupt|collapsed|succeeded|proved (right|wrong)|would later|eventually (won|lost|failed))\b/i;

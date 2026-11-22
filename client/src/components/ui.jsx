@@ -1,6 +1,7 @@
 import { MARK } from './logoMark.js';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation, t as tr, localeDir } from '../i18n/index.js';
 import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
 
 export function Button({ variant = 'default', size, icon: Icon, iconRight: IconRight, loading, block, className = '', children, ...rest }) {
@@ -50,7 +51,9 @@ export function Skeleton({ h = 16, w = '100%', style }) {
 export function Tabs({ tabs, value, onChange, label }) {
   const onKey = (e, i) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    // In right-to-left languages the next tab is to the left.
+    const forward = (e.key === 'ArrowRight') !== (localeDir() === 'rtl');
+    const next = tabs[(i + (forward ? 1 : tabs.length - 1)) % tabs.length];
     onChange(next.id);
     document.getElementById(`tab-${next.id}`)?.focus();
   };
@@ -85,9 +88,9 @@ export function TabPanel({ id, active, children }) {
   );
 }
 
-export function QualityBars({ value, label = 'Decision quality' }) {
+export function QualityBars({ value, label }) {
   return (
-    <span className="quality" role="img" aria-label={`${label}: ${value} of 3`}>
+    <span className="quality" role="img" aria-label={tr('common.qualityOf', { label: label || tr('common.decisionQuality'), value })}>
       {[1, 2, 3].map((i) => (
         <i key={i} className={i <= value ? 'on' : ''} />
       ))}
@@ -163,6 +166,7 @@ export function Logo({ size = 30 }) {
  * open, Tab stays inside, Escape closes, and focus returns to where it was.
  */
 export function Dialog({ title, onClose, children, wide = false }) {
+  const { t } = useTranslation();
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -198,7 +202,7 @@ export function Dialog({ title, onClose, children, wide = false }) {
       <div ref={ref} tabIndex={-1} className={`dialog stack gap-4${wide ? ' dialog-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="row between">
           <h2 className="h3">{title}</h2>
-          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
             <X aria-hidden="true" />
           </button>
         </div>

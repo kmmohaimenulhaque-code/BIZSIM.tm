@@ -11,9 +11,10 @@ export function noEmDash(s) {
 }
 
 /** Apply noEmDash to every string inside an object or array (returns a new value). */
-export function deepNoEmDash(v) {
+export function deepNoEmDash(v, depth = 0) {
+  if (depth > 32) return v;
   if (typeof v === 'string') return noEmDash(v);
-  if (Array.isArray(v)) return v.map(deepNoEmDash);
-  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, deepNoEmDash(x)]));
+  if (Array.isArray(v)) return v.map((x) => deepNoEmDash(x, depth + 1));
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, deepNoEmDash(x, depth + 1)]));
   return v;
 }

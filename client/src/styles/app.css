@@ -75,7 +75,7 @@ h4 {
 }
 .skip-link {
   position: absolute;
-  left: var(--s4);
+  inset-inline-start: var(--s4);
   top: -48px;
   z-index: 100;
   background: var(--accent);
@@ -175,7 +175,7 @@ h4 {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   background: var(--bg-2);
   padding: var(--s5) var(--s4) var(--s4);
   overflow-y: auto;
@@ -231,7 +231,7 @@ h4 {
 .nav-link.active::before {
   content: '';
   position: absolute;
-  left: calc(-1 * var(--s4));
+  inset-inline-start: calc(-1 * var(--s4));
   top: 8px;
   bottom: 8px;
   width: 3px;
@@ -506,7 +506,7 @@ h4 {
 }
 .search-field svg {
   position: absolute;
-  left: 14px;
+  inset-inline-start: 14px;
   top: 50%;
   transform: translateY(-50%);
   width: 18px;
@@ -515,13 +515,13 @@ h4 {
   pointer-events: none;
 }
 .search-field .input {
-  padding-left: 44px;
+  padding-inline-start: 44px;
   background: var(--glass);
   border-color: var(--border);
 }
 .kbd {
   position: absolute;
-  right: 10px;
+  inset-inline-end: 10px;
   top: 50%;
   transform: translateY(-50%);
   font-size: var(--t-11);
@@ -753,7 +753,7 @@ h4 {
 }
 .hero-credit {
   position: absolute;
-  right: var(--s4);
+  inset-inline-end: var(--s4);
   bottom: var(--s3);
   font-size: var(--t-11);
   color: var(--text-3);
@@ -900,7 +900,7 @@ a:hover .cover img.loaded {
 }
 .cover .ai-tag {
   position: absolute;
-  left: var(--s2);
+  inset-inline-start: var(--s2);
   top: var(--s2);
 }
 
@@ -912,6 +912,8 @@ a:hover .cover img.loaded {
 }
 .method-steps {
   display: flex;
+  flex-wrap: wrap; /* longer step names in some languages wrap instead of overflowing */
+  row-gap: var(--s3);
   align-items: center;
   list-style: none;
   margin: 0;
@@ -921,7 +923,7 @@ a:hover .cover img.loaded {
   display: flex;
   align-items: center;
   gap: var(--s3);
-  flex: 1;
+  flex: 1 0 auto;
   font-size: var(--t-16);
   white-space: nowrap;
 }
@@ -1062,15 +1064,15 @@ a:hover .cover img.loaded {
 .tab[aria-selected='true']::after {
   content: '';
   position: absolute;
-  left: var(--s3);
-  right: var(--s3);
+  inset-inline-start: var(--s3);
+  inset-inline-end: var(--s3);
   bottom: -1px;
   height: 2px;
   background: var(--accent);
   border-radius: 2px;
 }
 .tab .count {
-  margin-left: 6px;
+  margin-inline-start: 6px;
   color: var(--text-3);
 }
 
@@ -1086,7 +1088,7 @@ a:hover .cover img.loaded {
   font-size: var(--t-14);
 }
 .table th {
-  text-align: left;
+  text-align: start;
   font-size: var(--t-11);
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -1106,7 +1108,7 @@ a:hover .cover img.loaded {
   border-bottom: 0;
 }
 .table td.num {
-  text-align: right;
+  text-align: end;
   white-space: nowrap;
 }
 
@@ -1151,8 +1153,8 @@ a:hover .cover img.loaded {
 .timeline::before {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   top: 9px;
   height: 1px;
   background: var(--border-strong);
@@ -1168,7 +1170,7 @@ a:hover .cover img.loaded {
   content: '';
   position: absolute;
   top: -20px;
-  left: var(--s2);
+  inset-inline-start: var(--s2);
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -1238,7 +1240,7 @@ a:hover .cover img.loaded {
   background: none;
   color: var(--text-2);
   font-size: var(--t-14);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .step-rail button:hover:not(:disabled) {
@@ -1270,7 +1272,7 @@ a:hover .cover img.loaded {
   margin-top: var(--s3);
 }
 .stakes {
-  border-left: 2px solid var(--accent);
+  border-inline-start: 2px solid var(--accent);
   padding: var(--s2) 0 var(--s2) var(--s5);
   font-size: var(--t-18);
   line-height: 1.5;
@@ -1308,7 +1310,7 @@ a:hover .cover img.loaded {
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
   border-radius: 4px;
   background: var(--accent-soft);
   color: var(--accent-text);
@@ -1321,7 +1323,7 @@ a:hover .cover img.loaded {
   display: grid;
   gap: var(--s2);
   padding: var(--s4) var(--s5);
-  border-left: 2px solid var(--border-strong);
+  border-inline-start: 2px solid var(--border-strong);
 }
 .principle-name {
   font-weight: 600;
@@ -1360,7 +1362,7 @@ a:hover .cover img.loaded {
   position: absolute;
   z-index: 40;
   bottom: calc(100% + 8px);
-  left: 0;
+  inset-inline-start: 0;
   width: min(320px, 80vw);
   padding: var(--s3) var(--s4);
   border-radius: var(--r-md);
@@ -1399,7 +1401,7 @@ a:hover .cover img.loaded {
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: var(--surface);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: border-color var(--d-fast) var(--ease), background var(--d-fast) var(--ease);
 }
@@ -1474,7 +1476,7 @@ a:hover .cover img.loaded {
 }
 .option-tags {
   position: absolute;
-  right: var(--s4);
+  inset-inline-end: var(--s4);
   top: var(--s4);
   display: flex;
   gap: var(--s2);
@@ -1581,7 +1583,7 @@ a:hover .cover img.loaded {
   font-size: var(--t-13);
 }
 .dim .left {
-  text-align: right;
+  text-align: end;
   color: var(--text-2);
 }
 .dim .right {
@@ -1596,7 +1598,7 @@ a:hover .cover img.loaded {
 .dim-track::after {
   content: '';
   position: absolute;
-  left: 50%;
+  inset-inline-start: 50%;
   top: -4px;
   bottom: -4px;
   width: 1px;
@@ -1700,7 +1702,7 @@ a:hover .cover img.loaded {
 .stage-detail {
   font-size: var(--t-12);
   color: var(--text-3);
-  text-align: right;
+  text-align: end;
   max-width: 40ch;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1805,8 +1807,8 @@ a:hover .cover img.loaded {
 /* ============ Global search results ============ */
 .search-results {
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   top: calc(100% + 8px);
   z-index: 50;
   max-height: min(70vh, 520px);
@@ -1839,7 +1841,7 @@ a:hover .cover img.loaded {
   border: 0;
   border-radius: var(--r-sm);
   background: none;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .search-item svg {
@@ -1856,7 +1858,7 @@ a:hover .cover img.loaded {
 /* ============ Toasts ============ */
 .toasts {
   position: fixed;
-  right: var(--s5);
+  inset-inline-end: var(--s5);
   bottom: var(--s5);
   z-index: 90;
   display: grid;
@@ -1894,8 +1896,8 @@ a:hover .cover img.loaded {
 }
 .mobile-nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   z-index: 40;
   display: none;
@@ -1941,8 +1943,8 @@ a:hover .cover img.loaded {
 }
 .drawer {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   z-index: 61;
   max-height: 85dvh;
@@ -1997,7 +1999,7 @@ a:hover .cover img.loaded {
     padding: 0;
   }
   .sidebar .nav-link.active::before {
-    left: calc(-1 * var(--s3));
+    inset-inline-start: calc(-1 * var(--s3));
   }
   .local-badge {
     justify-content: center;
@@ -2128,13 +2130,13 @@ a:hover .cover img.loaded {
   }
   .toasts {
     bottom: calc(80px + env(safe-area-inset-bottom));
-    right: var(--s4);
+    inset-inline-end: var(--s4);
   }
   .panel-head,
   .panel-body,
   .panel-pad {
-    padding-left: var(--s4);
-    padding-right: var(--s4);
+    padding-inline-start: var(--s4);
+    padding-inline-end: var(--s4);
   }
   .reveal {
     padding: var(--s5) var(--s4);
@@ -2345,7 +2347,7 @@ select option {
 /* Shell */
 .sidebar {
   background: linear-gradient(180deg, rgba(22, 23, 27, 0.78), rgba(13, 14, 17, 0.84));
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   backdrop-filter: blur(22px) saturate(130%);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
   box-shadow: inset -1px 0 0 rgba(255, 248, 232, 0.025);
@@ -2582,7 +2584,7 @@ select option {
 }
 .timeline a::before {
   top: -22px;
-  left: 14px;
+  inset-inline-start: 14px;
   width: 9px;
   height: 9px;
   background: var(--bg);
@@ -2665,29 +2667,29 @@ h1.display,
 /* QR scanning */
 .scan-wrap { position: relative; overflow: hidden; border-radius: var(--r-md); }
 .scan-target { position: absolute; inset: 12%; border: 2px solid color-mix(in srgb, var(--accent) 80%, transparent); border-radius: var(--r-md); box-shadow: 0 0 0 999px rgba(0,0,0,.25); pointer-events: none; }
-.scan-stop { position: absolute; right: var(--s3); bottom: var(--s3); }
+.scan-stop { position: absolute; inset-inline-end: var(--s3); bottom: var(--s3); }
 .principle-chip.mine { border-style: dashed; }
 
 /* ---------- Principles library ---------- */
 .mine-card { border-style: dashed; }
 .tag-badge { text-transform: none; letter-spacing: 0; font-weight: 500; cursor: pointer; }
-.badge .chip-x { display: inline-grid; place-items: center; margin-left: 2px; background: none; border: 0; padding: 0 0 0 2px; color: inherit; cursor: pointer; opacity: .7; }
+.badge .chip-x { display: inline-grid; place-items: center; margin-inline-start: 2px; background: none; border: 0; padding: 0 0 0 2px; color: inherit; cursor: pointer; opacity: .7; }
 .badge .chip-x:hover { opacity: 1; }
 .badge a { color: inherit; text-decoration: none; }
 .pick-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
 .pick-list li + li { border-top: 1px solid var(--border); }
-.pick-list button { width: 100%; text-align: left; background: none; border: 0; padding: var(--s2) var(--s3); color: var(--text); cursor: pointer; font: inherit; min-height: 44px; }
+.pick-list button { width: 100%; text-align: start; background: none; border: 0; padding: var(--s2) var(--s3); color: var(--text); cursor: pointer; font: inherit; min-height: 44px; }
 .pick-list button:hover, .pick-list button:focus-visible { background: var(--surface-2, rgba(255,255,255,.04)); }
 
 /* ---------- Chat builder ---------- */
 .chat-log { display: flex; flex-direction: column; gap: var(--s3); min-height: 120px; }
 .chat-examples { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.chat-examples .chip { text-align: left; white-space: normal; height: auto; min-height: 40px; padding: var(--s2) var(--s3); line-height: 1.35; }
+.chat-examples .chip { text-align: start; white-space: normal; height: auto; min-height: 40px; padding: var(--s2) var(--s3); line-height: 1.35; }
 .chat-msg { max-width: min(640px, 92%); padding: var(--s3) var(--s4); border-radius: var(--r-md); border: 1px solid var(--border); background: var(--glass, var(--surface)); }
 .chat-msg p { margin: 0; }
 .chat-msg.user { align-self: flex-end; background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
 .chat-msg.assistant { align-self: flex-start; }
-.chat-plan, .chat-eps { margin: var(--s2) 0 0; padding-left: var(--s5, 20px); display: grid; gap: var(--s1, 4px); }
+.chat-plan, .chat-eps { margin: var(--s2) 0 0; padding-inline-start: var(--s5, 20px); display: grid; gap: var(--s1, 4px); }
 .chat-season { margin-top: var(--s1, 4px); }
 .chat-error { color: var(--warning); }
 .chat-input { position: sticky; bottom: calc(var(--s3) + env(safe-area-inset-bottom)); z-index: 5; display: grid; gap: var(--s2); padding: var(--s3); border-radius: var(--r-md); border: 1px solid var(--border-strong, var(--border)); background: color-mix(in srgb, var(--bg) 92%, var(--accent) 8%); box-shadow: 0 -12px 32px rgba(0,0,0,.35); }
@@ -2742,7 +2744,7 @@ h1.display,
   padding: var(--s4);
   border-radius: var(--r-md, 12px);
   background: var(--accent-soft);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
 }
 @media (min-width: 900px) {
   :root { --decision-scroll-margin: 96px; }
@@ -2839,7 +2841,7 @@ h1.display,
   flex-direction: column;
   align-items: flex-start;
   gap: var(--s2);
-  text-align: left;
+  text-align: start;
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -2896,7 +2898,7 @@ a.collection-title:hover {
 .bell-count {
   position: absolute;
   top: 2px;
-  right: 2px;
+  inset-inline-end: 2px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -2970,7 +2972,7 @@ a.collection-title:hover {
   top: 50%;
   width: 12px;
   height: 12px;
-  margin-left: -6px;
+  margin-inline-start: -6px;
   transform: translateY(-50%);
   border-radius: 50%;
   background: var(--accent);
@@ -2999,6 +3001,6 @@ a.collection-title:hover {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   vertical-align: -1px;
 }

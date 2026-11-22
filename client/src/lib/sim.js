@@ -2,13 +2,20 @@
 // Pure functions + thin store actions, independent of presentation.
 import { setState, getState, uid } from './store.js';
 import { CASES, CASE_BY_ID } from '@shared/cases/index.js';
-import { episodesOf, currentEpisodeIndex, episodeOfDecision } from '@shared/episodes.js';
+import { episodesOf, currentEpisodeIndex, episodeOfDecision, episodeCount, decisionCount } from '@shared/episodes.js';
+import { t } from '../i18n/index.js';
 
-export const METERS = [
-  { id: 'position', label: 'Strategic position' },
-  { id: 'finance', label: 'Financial strength' },
-  { id: 'resilience', label: 'Resilience' },
-];
+// Labels come from the localisation resources (simulation.meters.*).
+export const METERS = [{ id: 'position' }, { id: 'finance' }, { id: 'resilience' }];
+export const meterLabel = (id) => t(`simulation.meters.${id}`);
+
+/** "4 episodes · 8 decisions" in the current language. */
+export function seasonShapeLabel(c) {
+  const e = episodeCount(c);
+  const d = decisionCount(c);
+  const eps = t('simulation.episodes', { count: e });
+  return e === d ? eps : t('simulation.shape', { episodes: eps, decisions: t('simulation.decisions', { count: d }) });
+}
 const START = 50;
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
@@ -167,7 +174,8 @@ export function progressLabel(c, run) {
   const made = new Set(run.choices.map((ch) => ch.checkpointId));
   const d = ep.decisions.findIndex((k) => !made.has(k.id));
   const last = eps[eps.length - 1].roman;
-  return `Episode ${ep.roman} of ${last}${ep.decisions.length > 1 && d >= 0 ? ` · Decision ${d + 1} of ${ep.decisions.length}` : ''}`;
+  const episode = t('simulation.episodeOf', { roman: ep.roman, n: ep.n, last, total: eps.length });
+  return ep.decisions.length > 1 && d >= 0 ? t('simulation.progress', { episode, decision: t('simulation.decisionOf', { n: d + 1, total: ep.decisions.length }) }) : episode;
 }
 
 
@@ -179,5 +187,5 @@ export function decisionLabel(c, checkpointId) {
   const ep = episodeOfDecision(c, checkpointId);
   if (!ep) return '';
   const j = ep.decisions.findIndex((k) => k.id === checkpointId);
-  return ep.decisions.length > 1 ? `${ep.title} (decision ${j + 1})` : ep.title;
+  return ep.decisions.length > 1 ? t('simulation.decisionLabel', { title: ep.title, n: j + 1 }) : ep.title;
 }

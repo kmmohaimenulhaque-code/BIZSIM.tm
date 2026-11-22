@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Search, Play, ChevronRight, ArrowRight, Clock, BarChart2, Info, History, CalendarDays, Shuffle, Sparkles } from 'lucide-react';
 import { FEATURED_IDS, CASE_BY_ID } from '@shared/cases/index.js';
 import { CATALOGUE } from '@shared/catalogue.js';
-import { METHOD } from '@shared/dimensions.js';
 import { CaseCover } from '../components/content.jsx';
 import { Badge, Button, Empty } from '../components/ui.jsx';
 import { useStore } from '../lib/store.js';
-import { findCase, learningStats, progressLabel, runComplete, isOpen } from '../lib/sim.js';
-import { seasonShape } from '@shared/episodes.js';
+import { findCase, learningStats, progressLabel, runComplete, isOpen, seasonShapeLabel } from '../lib/sim.js';
+import { useTranslation } from '../i18n/index.js';
+import { formatInteger, formatWeekdayDate, formatDecimal, formatPercent } from '../i18n/format.js';
+import { MethodSteps } from '../components/content.jsx';
+import { contentLangOf } from '../lib/caseLocale.js';
 import { difficultyLabel, domainLabel, relTime } from '../lib/format.js';
 import { TrustBadges } from '../components/trust.jsx';
 import { BookmarkButton } from '../components/Collections.jsx';
@@ -18,6 +20,7 @@ import { isAiGenerated } from '@shared/contentClass.js';
 const caseOfDayIndex = (n, key) => [...key].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7) % n;
 
 export function CaseRow({ c }) {
+  const { t } = useTranslation();
   return (
     <Link to={`/cases/${c.id}`} className="case-row">
       <CaseCover c={c} />
@@ -31,18 +34,22 @@ export function CaseRow({ c }) {
             <TrustBadges c={c} short />
           </span>
         </div>
-        <h3 className="case-title mt-2">{c.title}</h3>
-        <p className="case-tagline">{c.tagline}</p>
+        <h3 className="case-title mt-2" lang={contentLangOf(c)} dir="auto">
+          {c.title}
+        </h3>
+        <p className="case-tagline" lang={contentLangOf(c)} dir="auto">
+          {c.tagline}
+        </p>
         <div className="case-facts">
           <span className="fact num">
-            <Clock aria-hidden="true" /> {c.minutes} min
+            <Clock aria-hidden="true" /> {t('simulation.minutes', { count: c.minutes })}
           </span>
           <span className="bar" aria-hidden="true" />
           <span className="fact">
             <BarChart2 aria-hidden="true" /> {difficultyLabel(c.difficulty)}
           </span>
           <span className="bar" aria-hidden="true" />
-          <span className="fact num">{seasonShape(c)}</span>
+          <span className="fact num">{seasonShapeLabel(c)}</span>
         </div>
       </div>
     </Link>
@@ -58,16 +65,17 @@ const HERO = {
 };
 
 function HeroImage() {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const base = import.meta.env.BASE_URL || '/';
   return (
     <>
-      <div className={`hero-image${loaded ? ' loaded' : ''}`} aria-hidden="true">
+      <div className={`hero-image${loaded ? ' loaded' : ''}`}>
         <img
           src={`${base}hero/hero.webp`}
           srcSet={`${base}hero/hero-800.webp 800w, ${base}hero/hero.webp 1280w`}
           sizes="(max-width: 860px) 100vw, 62vw"
-          alt=""
+          alt="Taipei architectural skyline backdrop"
           decoding="async"
           fetchpriority="high"
           onLoad={() => setLoaded(true)}
@@ -75,7 +83,7 @@ function HeroImage() {
       </div>
       {loaded && (
         <div className="hero-credit desktop-only">
-          Photo: {HERO.credit} ·{' '}
+          {t('dashboard.photoCredit', { credit: HERO.credit })} ·{' '}
           <a href={HERO.landingUrl} target="_blank" rel="noreferrer">
             {HERO.license}
           </a>
@@ -86,6 +94,7 @@ function HeroImage() {
 }
 
 function ResearchMini() {
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const nav = useNavigate();
   const submit = (e) => {
@@ -96,20 +105,20 @@ function ResearchMini() {
     <section className="panel" aria-labelledby="lcr-title">
       <div className="panel-head flush" style={{ display: 'block' }}>
         <h2 id="lcr-title" className="section-title">
-          Live company research
+          {t('dashboard.researchMini.title')}
         </h2>
-        <div className="eyebrow-rule eyebrow mt-2">Public sources</div>
+        <div className="eyebrow-rule eyebrow mt-2">{t('dashboard.researchMini.eyebrow')}</div>
       </div>
       <form className="panel-body stack gap-3" onSubmit={submit}>
         <label htmlFor="mini-research" className="sr-only">
-          Company name
+          {t('dashboard.researchMini.label')}
         </label>
-        <input id="mini-research" className="input" placeholder="Enter a company name…" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
+        <input id="mini-research" className="input" placeholder={t('dashboard.researchMini.placeholder')} value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" />
         <button className="btn btn-primary btn-block" type="submit" disabled={q.trim().length < 2}>
-          Start research <ArrowRight aria-hidden="true" />
+          {t('dashboard.researchMini.start')} <ArrowRight aria-hidden="true" className="dir-icon" />
         </button>
         <p className="meta row gap-2">
-          <Info size={14} aria-hidden="true" /> Sources and evidence accompany every result.
+          <Info size={14} aria-hidden="true" /> {t('dashboard.researchMini.note')}
         </p>
       </form>
     </section>
@@ -117,14 +126,15 @@ function ResearchMini() {
 }
 
 function RecentActivity() {
+  const { t } = useTranslation();
   const runs = useStore((s) => s.runs);
   const research = useStore((s) => s.researchHistory);
   const items = [
     ...runs.slice(0, 6).map((r) => {
       const c = findCase(r.caseId);
-      return c && { at: r.finishedAt || r.choices.at(-1)?.at || r.startedAt, label: c.title, sub: r.finishedAt && runComplete(c, r) ? 'Season completed' : progressLabel(c, r), to: `/cases/${c.id}`, icon: Play };
+      return c && { at: r.finishedAt || r.choices.at(-1)?.at || r.startedAt, label: c.title, sub: r.finishedAt && runComplete(c, r) ? t('simulation.seasonCompleted') : progressLabel(c, r), content: true, to: `/cases/${c.id}`, icon: Play };
     }),
-    ...research.slice(0, 6).map((h) => ({ at: h.at, label: h.name || h.query, sub: `Researched · ${h.sourcesCount} sources`, to: `/research?q=${encodeURIComponent(h.query)}`, icon: Search })),
+    ...research.slice(0, 6).map((h) => ({ at: h.at, label: h.name || h.query, sub: t('dashboard.recent.researched', { count: h.sourcesCount }), to: `/research?q=${encodeURIComponent(h.query)}`, icon: Search })),
   ]
     .filter(Boolean)
     .sort((a, b) => b.at.localeCompare(a.at))
@@ -134,16 +144,16 @@ function RecentActivity() {
     <section className="panel" aria-labelledby="ra-title">
       <div className="panel-head flush">
         <h2 id="ra-title" className="section-title">
-          Recent activity
+          {t('dashboard.recent.title')}
         </h2>
         {items.length > 0 && (
           <Link to="/history" className="link meta">
-            All
+            {t('dashboard.recent.all')}
           </Link>
         )}
       </div>
       {items.length === 0 ? (
-        <Empty icon={History}>Your recent cases and decisions will appear here.</Empty>
+        <Empty icon={History}>{t('dashboard.recent.empty')}</Empty>
       ) : (
         <ul className="stack panel-body gap-3" style={{ listStyle: 'none', margin: 0 }}>
           {items.map((i, k) => (
@@ -169,6 +179,7 @@ const TOTAL_DECISIONS = Object.values(CASE_BY_ID).reduce((n, c) => n + c.checkpo
 const CURATED_IDS = Object.keys(CASE_BY_ID);
 
 function CaseOfDay() {
+  const { t } = useTranslation();
   const [offset, setOffset] = useState(0);
   const [key, setKey] = useState(() => localDateKey());
   const mine = useStore((s) => s.myCases);
@@ -186,26 +197,26 @@ function CaseOfDay() {
     <section className="panel cotd" aria-labelledby="cotd-title">
       <div className="panel-head">
         <h2 id="cotd-title" className="section-title row gap-2">
-          <CalendarDays size={16} aria-hidden="true" /> {offset ? 'Another case to try' : 'Case of the Day'}
+          <CalendarDays size={16} aria-hidden="true" /> {offset ? t('dashboard.cotd.another') : t('dashboard.cotd.title')}
         </h2>
-        <span className="meta num">{new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+        <span className="meta num">{formatWeekdayDate(`${key}T12:00:00`)}</span>
       </div>
-      <div style={{ padding: '0 var(--s5)' }}>
+      <div style={{ paddingInline: 'var(--s5)' }}>
         <CaseRow c={c} />
       </div>
       <div className="panel-body row wrap gap-2 between">
-        <span className="meta">From the curated library. The same case for everyone today; it changes at midnight.</span>
+        <span className="meta">{t('dashboard.cotd.note')}</span>
         <div className="row gap-2">
           <BookmarkButton item={{ type: 'season', id: c.id, label: c.title }} />
           <Button size="sm" variant="ghost" icon={Shuffle} onClick={() => setOffset((o) => o + 1)}>
-            Explore another
+            {t('dashboard.cotd.exploreAnother')}
           </Button>
         </div>
       </div>
       {aiPick && (
         <div className="panel-body stack gap-2" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="meta-caps row gap-2">
-            <Sparkles size={13} aria-hidden="true" /> From your AI-written seasons
+            <Sparkles size={13} aria-hidden="true" /> {t('dashboard.cotd.fromAi')}
           </span>
           <Link to={`/cases/${encodeURIComponent(aiPick.id)}`} className="collection-title">
             {aiPick.title}
@@ -217,6 +228,7 @@ function CaseOfDay() {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const state = useStore((s) => s);
   const stats = learningStats(state);
   const featured = FEATURED_IDS.map((id) => CASE_BY_ID[id]).filter(Boolean).slice(0, 2);
@@ -227,37 +239,35 @@ export default function Dashboard() {
     <>
       <section className="hero" aria-labelledby="hero-title">
         <HeroImage />
-        <div className="eyebrow eyebrow-rule">Your strategy workspace</div>
+        <div className="eyebrow eyebrow-rule">{t('dashboard.eyebrow')}</div>
         <h1 id="hero-title" className="display">
-          <span style={{ display: 'block' }}>Understand business.</span>
-          <span style={{ display: 'block' }}>Think like a decision-maker.</span>
+          <span style={{ display: 'block' }}>{t('dashboard.heroLine1')}</span>
+          <span style={{ display: 'block' }}>{t('dashboard.heroLine2')}</span>
         </h1>
-        <p className="lead">Investigate real companies, weigh strategic trade-offs, and learn from the decisions that shaped them, from Hammurabi’s Babylon to the AI era.</p>
+        <p className="lead">{t('dashboard.lead')}</p>
 
         <div className="quick-actions">
           <Link to="/cases" className="panel quick-action interactive">
             <BookOpen className="qa-icon" aria-hidden="true" />
             <span className="grow">
-              <div className="qa-title">Explore business cases</div>
-              <div className="qa-sub">
-                {CATALOGUE.length} seasons · {TOTAL_DECISIONS.toLocaleString('en-US')} decisions
-              </div>
+              <div className="qa-title">{t('dashboard.exploreTitle')}</div>
+              <div className="qa-sub">{t('dashboard.exploreSub', { seasons: formatInteger(CATALOGUE.length), decisions: formatInteger(TOTAL_DECISIONS) })}</div>
             </span>
             <ChevronRight className="chev" aria-hidden="true" />
           </Link>
           <Link to="/research" className="panel quick-action interactive primary">
             <Search className="qa-icon" aria-hidden="true" />
             <span className="grow">
-              <div className="qa-title">Research a company</div>
-              <div className="qa-sub">Build a source-backed case</div>
+              <div className="qa-title">{t('dashboard.researchTitle')}</div>
+              <div className="qa-sub">{t('dashboard.researchSub')}</div>
             </span>
             <ChevronRight className="chev" aria-hidden="true" />
           </Link>
           <Link to={currentCase ? `/cases/${currentCase.id}` : '/simulations'} className="panel quick-action interactive">
             <Play className="qa-icon" aria-hidden="true" />
             <span className="grow">
-              <div className="qa-title">{currentCase ? 'Resume simulation' : 'Start a simulation'}</div>
-              <div className="qa-sub">{currentCase ? currentCase.title : 'Make the call, test your reasoning'}</div>
+              <div className="qa-title">{currentCase ? t('dashboard.resume') : t('dashboard.start')}</div>
+              <div className="qa-sub">{currentCase ? currentCase.title : t('dashboard.startSub')}</div>
             </span>
             <ChevronRight className="chev" aria-hidden="true" />
           </Link>
@@ -270,13 +280,13 @@ export default function Dashboard() {
         <section className="panel" aria-labelledby="fc-title">
           <div className="panel-head">
             <h2 id="fc-title" className="section-title">
-              Featured cases
+              {t('dashboard.featured')}
             </h2>
             <Link to="/cases" className="link">
-              View library <ArrowRight aria-hidden="true" />
+              {t('dashboard.viewLibrary')} <ArrowRight aria-hidden="true" className="dir-icon" />
             </Link>
           </div>
-          <div style={{ padding: '0 var(--s5) var(--s2)' }}>
+          <div style={{ paddingInline: 'var(--s5)', paddingBottom: 'var(--s2)' }}>
             {featured.map((c) => (
               <CaseRow key={c.id} c={c} />
             ))}
@@ -292,28 +302,28 @@ export default function Dashboard() {
           <section className="panel span-12" aria-labelledby="li-title">
             <div className="panel-head">
               <h2 id="li-title" className="section-title">
-                Learning insights
+                {t('dashboard.insights.title')}
               </h2>
               <Link to="/learning" className="link">
-                Full profile <ArrowRight aria-hidden="true" />
+                {t('dashboard.insights.full')} <ArrowRight aria-hidden="true" className="dir-icon" />
               </Link>
             </div>
             <div className="kpis" style={{ border: 0, borderRadius: 0 }}>
               <div className="kpi">
-                <span className="meta-caps">Decisions made</span>
-                <span className="kpi-value num">{stats.decisions}</span>
+                <span className="meta-caps">{t('dashboard.insights.decisions')}</span>
+                <span className="kpi-value num">{formatInteger(stats.decisions)}</span>
               </div>
               <div className="kpi">
-                <span className="meta-caps">Cases completed</span>
-                <span className="kpi-value num">{stats.casesCompleted}</span>
+                <span className="meta-caps">{t('dashboard.insights.completed')}</span>
+                <span className="kpi-value num">{formatInteger(stats.casesCompleted)}</span>
               </div>
               <div className="kpi">
-                <span className="meta-caps">Matched history</span>
-                <span className="kpi-value num">{stats.alignment == null ? '' : `${stats.alignment}%`}</span>
+                <span className="meta-caps">{t('dashboard.insights.matched')}</span>
+                <span className="kpi-value num">{stats.alignment == null ? '' : formatPercent(stats.alignment / 100)}</span>
               </div>
               <div className="kpi">
-                <span className="meta-caps">Avg. decision quality</span>
-                <span className="kpi-value num">{stats.avgQuality == null ? '' : `${stats.avgQuality.toFixed(1)}/3`}</span>
+                <span className="meta-caps">{t('dashboard.insights.quality')}</span>
+                <span className="kpi-value num">{stats.avgQuality == null ? '' : t('dashboard.insights.qualityValue', { value: formatDecimal(stats.avgQuality) })}</span>
               </div>
             </div>
           </section>
@@ -322,16 +332,9 @@ export default function Dashboard() {
         <section className="panel panel-pad span-12" aria-labelledby="method-title">
           <div className="method">
             <h2 id="method-title" className="section-title">
-              The BIZSIM method
+              {t('method.title')}
             </h2>
-            <ol className="method-steps">
-              {METHOD.map((m, i) => (
-                <li key={m}>
-                  <span className={`step-num num${i === 0 ? ' active' : ''}`}>{i + 1}</span>
-                  {m}
-                </li>
-              ))}
-            </ol>
+            <MethodSteps />
           </div>
         </section>
       </div>

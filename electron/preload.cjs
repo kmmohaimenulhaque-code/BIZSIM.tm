@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('bizsimDesktop', {
   resetDataFolder: () => ipcRenderer.invoke('bizsim:reset-data-folder'),
   openFolder: (p) => ipcRenderer.invoke('bizsim:open-folder', p),
   relaunch: () => ipcRenderer.invoke('bizsim:relaunch'),
+  // Season reports in scripts the built-in PDF fonts cannot shape (Bengali,
+  // Arabic, Hindi, CJK...) are rendered by Chromium. Returns the PDF bytes.
+  htmlToPdf: (html) => ipcRenderer.invoke('bizsim:html-to-pdf', html),
   // .bizsim files opened from the file manager (file association) arrive here.
   onOpenPackage: (cb) => {
     const h = (_e, text) => typeof text === 'string' && cb(text);

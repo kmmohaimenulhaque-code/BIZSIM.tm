@@ -1,4 +1,4 @@
-# BIZSIM security model (1.6.0)
+# BIZSIM security model (1.7.3)
 
 BIZSIM has no accounts, no tracking and no cloud service of its own. Data stays on the user's devices. This document describes what is protected, how, and what is not.
 
@@ -62,3 +62,106 @@ Off until the user turns them on. Scheduled locally (Android/iOS system schedule
 5. Imported seasons are only as trustworthy as whoever shared them. The app labels them, shows their sources and never presents an imported checksum as authorship.
 
 Report security problems privately to the maintainers rather than in a public issue.
+
+## Public website & production deployment (1.7.3)
+
+* **Network topology & TLS.** Desktop builds bind strictly to `127.0.0.1`. For a public website deployment, run BIZSIM behind an HTTPS reverse proxy (Nginx, Caddy, Cloudflare, or cloud load balancer) that terminates TLS, forwards client IPs cleanly, and enforces edge request limits.
+* **Server-side AI keys.** On a public website, configure provider keys server-side via environment variables (`.env` / container secrets) rather than asking visitors to paste personal API keys into a public browser origin.
+* **Strict CORS.** Production must never default to `*`. Set `CORS_ORIGINS` explicitly to your exact origin(s), e.g. `CORS_ORIGINS=https://bizsim.example.com`. When `CORS_ORIGINS` is unset, only local desktop/mobile origins (`localhost`, `127.0.0.1`, `capacitor://localhost`, `ionic://localhost`) are allowed.
+* **Layered rate limiting.** All `/api/*` traffic is protected by a bounded in-memory global limiter (120 requests/minute/IP) plus stricter per-route limits: Research (`<= 8/min`), Chat (`<= 10/min`), Image generation (`<= 4/min`), Image search (`<= 30/min`), Key testing (`<= 12/min`), and key/share mutators (`<= 30/min`). Exceeded limits return `429` with `Retry-After`.
+  * *Single vs. multi-instance scaling:* The built-in bounded in-memory limiter (`createBoundedRateLimiter`) is safe for a single Node process (capped key table, automatic stale-entry pruning). If you scale horizontally across multiple replicas or face distributed abuse, add reverse-proxy/edge rate limits or a shared Redis-backed store in front of BIZSIM.
+* **Zero API keys in logs.** Startup logs report only provider status (on/off and model name) and never print full or partial keys. All Express JSON responses, global error handlers, uncaught-exception/unhandled-rejection handlers, SSE failure events, and background job event payloads pass through `redactSecrets` / `redactSecretsDeep` (`server/src/lib/http.js`), which scrubs Gemini (`AIza...`, `AQ....`), OpenAI (`sk-...`), Anthropic (`sk-ant-...`), NVIDIA (`nvapi-...`), Groq (`gsk_...`), xAI (`xai-...`), `Bearer` tokens, API key headers, and `key=`/`token=` query parameters.
+* **Public AI access-control modes (`BIZSIM_PUBLIC_AI_TOKEN`).**
+  * *Standard public site (token unset):* Supply server-side AI keys in `.env` and rely on layered edge + in-memory rate limits (`8/min` research, `10/min` chat, `4/min` image gen) for cost control.
+  * *Locked-down / edge-authenticated mode (token set):* When `BIZSIM_PUBLIC_AI_TOKEN` is set, expensive AI routes (`/api/research*`, `/api/jobs/research`, `/api/chat`, `/api/jobs/chat`, `/api/images/generate`) intentionally return `401` to unauthenticated browsers unless `X-BizSim-Public-Token` (or `Authorization: Bearer <token>`) matches via `crypto.timingSafeEqual`. Inject this header from an authenticating reverse proxy (e.g. Cloudflare Access, OAuth2 Proxy, Nginx auth) or authorized backend clients. **Never** embed `BIZSIM_PUBLIC_AI_TOKEN` in `VITE_*` variables or frontend JavaScript bundles.
+* **Zero-key-logging vs. BYOK transmission.** Zero-key-logging guarantees the server never writes API keys to logs, error responses, SSE streams, or exports. It is **not** zero-key-transmission: when a browser user enters a device key against a hosted server, that key is stored in `localStorage`, sent to that server in `X-BizSim-Keys` (over HTTPS on a properly configured site, or HMAC-CTR sealed over Wi-Fi pairing), held in request-scoped `AsyncLocalStorage` only while forwarding the upstream provider call, and then discarded. This is why personal BYOK belongs in the official Desktop/Mobile apps or a private self-hosted instance.
+* **SSE concurrency & timeouts.** Long-lived SSE streams (`/api/research/stream`, `/api/chat`, `/api/jobs/:id/events`) are capped at **3 concurrent connections per IP** (returning `429` with `Retry-After`), with a 5-minute idle timeout and 10-minute max duration. Active stream entries are never evicted when the bounded table fills (the limiter fails closed instead, preventing IP-churn bypasses).
+* **Background job IDs.** Job IDs are generated with 192 bits of CSPRNG entropy (`crypto.randomBytes(24).toString('base64url')`), auto-pruned after 1 hour, and never include API keys or raw credentials in event payloads. *Residual note:* job event reads rely on high-entropy unguessable IDs rather than user accounts; keep job URLs private.
+* **Security headers & payload caps.** The server sets `Content-Security-Policy`, `Permissions-Policy`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and `X-Frame-Options: SAMEORIGIN`, and caps JSON bodies at `200kb`.
+* **In-app Privacy Policy & Terms.** Accessible directly from the sidebar under **About BIZSIM** (top-level tabs for Overview, Privacy Policy, and Terms & Conditions), explaining local-first storage, user API key responsibility, and encouraging native Desktop/Mobile app downloads for BYOK and SEC EDGAR.
+* **HTML-to-text extraction.** `server/src/research/sources.js` (`pageText`) uses a single-pass state-machine parser to extract plain text from `h1`/`h2`/`h3`/`p`/`li` blocks while discarding comments and `script`/`style`/`noscript`/`svg`/`nav`/`footer`/`header`/`form` containers (capped at 4,000 characters). Its output is plain text only and is never rendered as HTML.
+
+### Example reverse proxy configuration (Nginx)
+
+For a public website deployment, terminate HTTPS at your reverse proxy, forward real client IPs, enforce edge rate limits for general and expensive AI routes, disable buffering with a long read timeout for SSE streams, and cap request body sizes:
+
+```nginx
+# General API traffic (~120 req/min/IP) and stricter zone for expensive AI routes
+limit_req_zone $binary_remote_addr zone=bizsim_api:10m rate=2r/s;
+limit_req_zone $binary_remote_addr zone=bizsim_ai:10m rate=8r/m;
+limit_conn_zone $binary_remote_addr zone=bizsim_conn:10m;
+
+server {
+  listen 443 ssl http2;
+  server_name bizsim.example.com;
+
+  # ssl_certificate     /etc/letsencrypt/live/bizsim.example.com/fullchain.pem;
+  # ssl_certificate_key /etc/letsencrypt/live/bizsim.example.com/privkey.pem;
+
+  # DDoS, Slowloris & bandwidth controls
+  client_max_body_size 512k;
+  client_header_timeout 10s;
+  client_body_timeout 15s;
+  limit_conn bizsim_conn 20;
+  gzip on;
+  gzip_types application/json text/css application/javascript image/svg+xml;
+
+  # Frontend SPA & static assets (match PORT in .env, default 8787)
+  location / {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # General API routes + SSE job event streams (/api/jobs/:id/events)
+  location /api/ {
+    limit_req zone=bizsim_api burst=20 nodelay;
+    limit_req_status 429;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;       # required for SSE event streams
+    proxy_read_timeout 300s;   # keep long-running SSE streams open
+  }
+
+  # Stricter edge limit on expensive AI routes
+  # Covers: /api/research, /api/research/stream, /api/jobs/research,
+  #         /api/chat, /api/jobs/chat, /api/images/generate
+  location ~ ^/api/(research(/stream)?|jobs/(research|chat)|chat|images/generate)$ {
+    limit_req zone=bizsim_ai burst=4 nodelay;
+    limit_req_status 429;
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;       # required for SSE (/api/research/stream, /api/chat)
+    proxy_read_timeout 300s;   # allow multi-season builds & live research to finish
+  }
+}
+```
+
+#### Matching application environment (`.env`)
+
+```dotenv
+NODE_ENV=production
+PORT=8787
+CORS_ORIGINS=https://bizsim.example.com
+TRUST_PROXY=1
+# Supply AI provider keys server-side on public sites (do not rely on visitors pasting personal keys in the browser):
+GEMINI_API_KEY=...
+```
+
+* **`TRUST_PROXY` guidance** (parsed by `parseTrustProxy()` in `server/src/config.js`):
+  * `loopback` (default): use when Nginx/Caddy runs on the **same host** (`127.0.0.1`).
+  * `1` (or exact hop count `2`, etc.): use when deployed behind a **non-loopback** reverse proxy or cloud load balancer (e.g., AWS ALB, Cloudflare + Nginx = `2`).
+  * CIDR subnet (e.g., `10.0.0.0/8`): use when your load balancer sits in a known private VPC range.
+* **Residual operational risks**:
+  * The built-in bounded rate limiter is **in-memory per Node process**. For multi-replica horizontal scaling or distributed abuse, enforce rate limits at the reverse proxy/CDN edge or back them with a shared Redis store.
+  * `TRUST_PROXY` must match your real proxy topology; setting it too narrow collapses all visitors onto the proxy's IP, while setting it too broad (`true` without a trusted edge) allows clients to spoof `X-Forwarded-For` and bypass per-IP rate limits.

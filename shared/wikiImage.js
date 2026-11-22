@@ -3,12 +3,38 @@
 // page images (non-free files are excluded), and the licence is read from the
 // file's metadata and shown with the image. Works in the browser (CORS via
 // origin=*) and in Node 18+.
+import { validateImageAsset } from './imagePolicy.js';
+
 const API = 'https://en.wikipedia.org/w/api.php';
-const strip = (html) => String(html || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
+function strip(html) {
+  const s = String(html || '');
+  let out = '';
+  let inTag = false;
+  let quote = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inTag) {
+      if (quote) {
+        if (c === quote) quote = '';
+      } else if (c === '"' || c === "'") {
+        quote = c;
+      } else if (c === '>') {
+        inTag = false;
+      }
+    } else if (c === '<') {
+      inTag = true;
+      quote = '';
+    } else {
+      out += c;
+    }
+  }
+  return out.replace(/[<>]/g, '').replace(/\s+/g, ' ').trim();
+}
 
 const isNode = typeof window === 'undefined';
-async function api(params, timeout = 9000) {
-  const url = `${API}?${new URLSearchParams({ format: 'json', formatversion: '2', origin: '*', ...params })}`;
+async function api(params, timeout = 9000, endpoint = API) {
+  const url = `${endpoint}?${new URLSearchParams({ format: 'json', formatversion: '2', origin: '*', ...params })}`;
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const timer = ctrl ? setTimeout(() => ctrl.abort(), timeout) : null;
   try {
@@ -27,7 +53,7 @@ function toImage(file, info, article) {
   const license = strip(m.LicenseShortName?.value) || 'Free licence';
   if (/fair use|non-free/i.test(license)) return null;
   if ((info.width || 0) < 240) return null;
-  return {
+  const candidate = {
     id: `wiki:${file}`,
     url: info.thumburl || info.url,
     title: strip(m.ObjectName?.value) || file.replace(/\.[a-z0-9]+$/i, '').replace(/_/g, ' '),
@@ -40,17 +66,29 @@ function toImage(file, info, article) {
     width: info.thumbwidth || info.width,
     height: info.thumbheight || info.height,
   };
+  const checked = validateImageAsset({
+    ...candidate,
+    file,
+    description: strip(m.ImageDescription?.value),
+    categories: strip(m.Categories?.value),
+  });
+  if (!checked) return null;
+  return { ...candidate, url: checked.url };
 }
 
-const fileInfo = (titles, width) =>
-  api({
-    action: 'query',
-    titles: titles.map((f) => `File:${f}`).join('|'),
-    prop: 'imageinfo',
-    iiprop: 'url|size|extmetadata',
-    iiurlwidth: String(width),
-    iiextmetadatafilter: 'LicenseShortName|LicenseUrl|Artist|NonFree|ObjectName',
-  });
+const fileInfo = (titles, width, endpoint = API) =>
+  api(
+    {
+      action: 'query',
+      titles: titles.map((f) => (f.startsWith('File:') ? f : `File:${f}`)).join('|'),
+      prop: 'imageinfo',
+      iiprop: 'url|size|extmetadata',
+      iiurlwidth: String(width),
+      iiextmetadatafilter: 'LicenseShortName|LicenseUrl|Artist|NonFree|ObjectName|ImageDescription|Categories',
+    },
+    9000,
+    endpoint
+  );
 
 /** The lead image of a Wikipedia article (by exact title), or null. */
 export async function wikiLeadImage(title, width = 960) {
@@ -87,14 +125,43 @@ export async function wikiLeadImages(titles, width = 960) {
   return out;
 }
 
-/** Find the best-matching article for free text, then use its lead image. */
-export async function wikiImageForQuery(query) {
+const RASTER_PHOTO_RE = /\.(jpe?g|png|webp)$/i;
+const SKIP_FILE_RE = /(logo|icon|wordmark|signature|flag_of|coat_of_arms|map_blank)/i;
+
+/** Search Wikimedia Commons directly for freely licensed photos matching a query. */
+export async function commonsImageForQuery(query, width = 960) {
   const q = String(query || '').trim().slice(0, 100);
   if (!q) return null;
-  const d = await api({ action: 'query', list: 'search', srsearch: q, srlimit: '3', srnamespace: '0' });
-  for (const hit of d?.query?.search || []) {
-    const img = await wikiLeadImage(hit.title).catch(() => null);
+  const d = await api(
+    { action: 'query', list: 'search', srsearch: `${q} filetype:bitmap`, srlimit: '8', srnamespace: '6' },
+    9000,
+    COMMONS_API
+  );
+  const titles = (d?.query?.search || [])
+    .map((h) => h.title)
+    .filter((t) => RASTER_PHOTO_RE.test(t) && !SKIP_FILE_RE.test(t));
+  if (!titles.length) return null;
+  const f = await fileInfo(titles.slice(0, 6), width, COMMONS_API);
+  const byTitle = {};
+  for (const p of f?.query?.pages || []) {
+    if (p.imageinfo?.[0]) byTitle[p.title] = p.imageinfo[0];
+  }
+  for (const t of titles) {
+    const file = t.replace(/^File:/, '').replace(/ /g, '_');
+    const img = toImage(file, byTitle[t], q);
     if (img) return img;
   }
   return null;
+}
+
+/** Find the best-matching Wikipedia lead image, falling back to Wikimedia Commons photos. */
+export async function wikiImageForQuery(query, width = 960) {
+  const q = String(query || '').trim().slice(0, 100);
+  if (!q) return null;
+  const d = await api({ action: 'query', list: 'search', srsearch: q, srlimit: '5', srnamespace: '0' }).catch(() => null);
+  for (const hit of d?.query?.search || []) {
+    const img = await wikiLeadImage(hit.title, width).catch(() => null);
+    if (img) return img;
+  }
+  return commonsImageForQuery(q, width).catch(() => null);
 }

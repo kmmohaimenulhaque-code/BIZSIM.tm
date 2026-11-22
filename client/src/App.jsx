@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import { Empty, Skeleton } from './components/ui.jsx';
 import { Compass } from 'lucide-react';
 import { ImportHost } from './components/CaseShare.jsx';
+import { useTranslation } from './i18n/index.js';
 
 const Explore = lazy(() => import('./pages/Explore.jsx'));
 const CasePlayer = lazy(() => import('./pages/CasePlayer.jsx'));
@@ -39,8 +40,9 @@ const useHash = typeof window !== 'undefined' && (window.location.protocol === '
 const Router = useHash ? HashRouter : BrowserRouter;
 
 function Loading() {
+  const { t } = useTranslation();
   return (
-    <div className="stack gap-4" aria-busy="true" aria-label="Loading">
+    <div className="stack gap-4" aria-busy="true" aria-label={t('common.loading')}>
       <Skeleton h={14} w={180} />
       <Skeleton h={44} w="60%" />
       <Skeleton h={18} w="80%" />
@@ -50,9 +52,18 @@ function Loading() {
 }
 
 function NotFound() {
+  const { t } = useTranslation();
   return (
-    <Empty icon={Compass} title="Page not found" action={<Link to="/" className="btn">Back to overview</Link>}>
-      The page you were looking for does not exist.
+    <Empty
+      icon={Compass}
+      title={t('errors.notFoundTitle')}
+      action={
+        <Link to="/" className="btn">
+          {t('errors.backToOverview')}
+        </Link>
+      }
+    >
+      {t('errors.notFoundBody')}
     </Empty>
   );
 }

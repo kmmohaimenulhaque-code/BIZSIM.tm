@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { onJobEvent } from './jobs.js';
 import { saveGeneratedCase, setCaseTags, getState } from './store.js';
 import { notifyEvent } from './notify.js';
+import { t } from '../i18n/index.js';
 
 const KEY = 'bizsim.chat.v2';
 let items = load();
@@ -49,8 +50,8 @@ onJobEvent('chat', (event, d) => {
     const current = library.tags?.[c.id]?.principles || [];
     setCaseTags(c.id, { tags: ['chat-built'], principles: [...current, ...linked] });
     setChatItems((list) => [...list, { role: 'assistant', season: c, linked }]);
-    notifyEvent('researchDone', { key: `chat|${c.id}`, title: 'Season built', body: `“${c.title}” is ready to play.`, link: `/cases/${c.id}` });
+    notifyEvent('researchDone', { key: `chat|${c.id}`, title: t('chat.notify.title'), body: t('chat.notify.body', { title: c.title }), link: `/cases/${c.id}` });
   }
-  if (event === 'season-error') setChatItems((list) => [...list, { role: 'assistant', error: `Could not build "${d.subject}": ${d.message}` }]);
+  if (event === 'season-error') setChatItems((list) => [...list, { role: 'assistant', error: t('chat.seasonError', { subject: d.subject, message: d.message }) }]);
   if (event === 'failure') setChatItems((list) => [...list, { role: 'assistant', error: d.message }]);
 });
