@@ -19,6 +19,7 @@ import { noEmDash } from '../../../shared/text.js';
 import { wikipediaArticle } from '../research/wikiArticle.js';
 import { fetchJson } from '../lib/http.js';
 import { checkCaseClaims } from '../../../shared/evidenceCheck.js';
+import { languageInstruction, cleanLocale, promptLanguage } from '../../../shared/locales.js';
 
 const PILLAR_IDS = Object.keys(PILLARS);
 
@@ -48,7 +49,7 @@ function planSchema(userPrinciples) {
 
 const SEASON_SYSTEM = `You are BIZSIM's case architect. You write rigorous, neutral executive business seasons for learners.
 Rules:
-- Use ONLY the facts in the dossier. Every evidence item and every outcome must cite dossier source ids (e.g. "S1"). Never invent numbers, dates, people or events.
+- Use ONLY the facts in the dossier. Clearly separate Verified Fact (must cite a sourceId present in sources, e.g. "S1") from AI Analysis / Hypothetical (must set kind: "analysis" or "hypothetical" and never fabricate a URL or historical citation). Never invent numbers, dates, people or events.
 - The season has exactly 4 EPISODES in chronological order, following the requested turning points where the dossier documents them; replace any the dossier does not document with documented ones. Each episode holds 2 or 3 linked decisions and ends with its own outcome and insight.
 - In each past episode, exactly one option per decision has "historical": true (what was actually done) and each decision's "outcome" states what happened next, citing source ids.
 - Only if the brief says the last episode is live: episode IV is live, with no historical option and no outcome.
@@ -120,7 +121,7 @@ async function ground(spec) {
   return { main, sources };
 }
 
-async function writeSeason(spec, onProgress) {
+async function writeSeason(spec, onProgress, locale = null) {
   onProgress?.(`Reading Wikipedia for ${spec.subject}`);
   const { main, sources } = await ground(spec);
   onProgress?.(`Writing "${spec.subject}" from ${sources.length} source${sources.length === 1 ? '' : 's'}`);
@@ -138,7 +139,7 @@ ${dossier}`;
 
   const company = spec.subject;
   const parts = await writeSeasonParts({
-    system: SEASON_SYSTEM,
+    system: SEASON_SYSTEM + languageInstruction(locale) + (locale && locale !== 'en' ? `\nWrite ALL user-facing prose—including title, summary, dilemmas, evidence, outcomes, and baseRate—strictly in ${promptLanguage(locale)} (${locale}). Do not mix English prose into non-English responses.` : ''),
     brief,
     sourceIds: sources.map((x) => x.id),
     liveLast: Boolean(spec.live),
@@ -168,6 +169,7 @@ ${dossier}`;
     minutes: 20,
     classification: spec.live ? 'LIVE' : 'HISTORICAL',
     source: 'chat',
+    contentLocale: locale && locale !== 'en' ? locale : undefined,
     generatedAt: new Date().toISOString(),
     wiki: main.title,
     imageQuery: company,
@@ -196,7 +198,8 @@ ${dossier}`;
  * @param {{ messages: {role:'user'|'assistant', content:string}[], userPrinciples?: {id,name,idea}[] }} input
  * @param {(event:string, data:object)=>void} emit
  */
-export async function chatTurn({ messages, userPrinciples = [] }, emit = () => {}) {
+export async function chatTurn({ messages, userPrinciples = [], locale = null }, emit = () => {}) {
+  const lang = cleanLocale(locale);
   const convo = (Array.isArray(messages) ? messages : [])
     .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
     .slice(-12)
@@ -206,7 +209,7 @@ export async function chatTurn({ messages, userPrinciples = [] }, emit = () => {
 
   emit('status', { text: 'Understanding your request' });
   const plan = await completeJson({
-    system: PLAN_SYSTEM,
+    system: PLAN_SYSTEM + (lang && lang !== 'en' ? `\nLANGUAGE: The learner's interface is in ${promptLanguage(lang)}. Write "reply", "angle" and the proposed turning points in that language. Keep "subject" and "wikipedia" as the exact English Wikipedia title.` : ''),
     user: `Conversation so far:\n${convo.map((m) => `${m.role === 'user' ? 'Learner' : 'BIZSIM'}: ${m.content}`).join('\n')}\n\n${planSchema(own)}`,
     maxTokens: 2000,
     validate: (v) => {
@@ -227,7 +230,7 @@ export async function chatTurn({ messages, userPrinciples = [] }, emit = () => {
     const spec = specs[i];
     const tag = specs.length > 1 ? `Season ${i + 1} of ${specs.length}: ` : '';
     try {
-      const result = await writeSeason(spec, (text) => emit('status', { text: `${tag}${text}` }));
+      const result = await writeSeason(spec, (text) => emit('status', { text: `${tag}${text}` }), lang);
       emit('season', result);
     } catch (e) {
       emit('season-error', { subject: spec.subject, message: e.message });

@@ -131,14 +131,37 @@ function imageEntry() {
   return chain.find((e) => ok(e) && (!forced || e.provider === forced)) || null;
 }
 
+/** Parse Express trust proxy setting from TRUST_PROXY env var (defaults safely to "loopback"). */
+export function parseTrustProxy(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return 'loopback';
+  const s = String(raw).trim();
+  if (s === 'false' || s === '0') return false;
+  if (s === 'true') return true;
+  if (/^\d+$/.test(s)) return Number(s);
+  return s;
+}
+
+export const DEFAULT_CORS_ORIGINS = [
+  'http://localhost',
+  'https://localhost',
+  'http://127.0.0.1',
+  'capacitor://localhost',
+  'ionic://localhost',
+];
+
 export const config = {
   port: Number(env.PORT || 8787),
   host: env.HOST || '0.0.0.0',
   dataDir: env.BIZSIM_DATA_DIR || path.join(ROOT, 'server', 'data'),
   clientDist: env.BIZSIM_CLIENT_DIST || path.join(ROOT, 'client', 'dist'),
-  corsOrigins: (env.CORS_ORIGINS || '*').split(',').map((s) => s.trim()),
+  corsOriginsExplicit: Boolean(env.CORS_ORIGINS && env.CORS_ORIGINS.trim()),
+  corsOrigins: env.CORS_ORIGINS
+    ? env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+    : DEFAULT_CORS_ORIGINS,
   userAgent: env.BIZSIM_USER_AGENT || 'BIZSIM/1.6 (open-source business research)',
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
   adminToken: env.BIZSIM_ADMIN_TOKEN || '',
+  publicAiToken: env.BIZSIM_PUBLIC_AI_TOKEN || '',
 };
 
 Object.defineProperties(config, {

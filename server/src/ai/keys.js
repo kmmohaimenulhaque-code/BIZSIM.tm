@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config, KEY_NAMES, setSavedSettings, getSavedSettings, aiChain, parseKeyList } from '../config.js';
 import { fetchJson, HttpError } from '../lib/http.js';
+import { assertPublicUrl, fetchSafeText } from '../lib/netSafety.js';
 import { geminiCandidates } from './geminiModels.js';
 import { applyChainOp } from '../../../shared/keychain.js';
 
@@ -25,7 +26,7 @@ export function detectProvider(key, baseUrl) {
     const known = Object.entries(PROVIDERS).find(([, p]) => p.baseUrl && baseUrl.startsWith(p.baseUrl));
     return known ? known[0] : 'custom';
   }
-  if (/^AIza[0-9A-Za-z_-]{20,}$/.test(k)) return 'gemini';
+  if (/^(?:AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,})$/.test(k)) return 'gemini';
   if (/^sk-ant-/.test(k)) return 'anthropic';
   if (/^nvapi-/.test(k)) return 'nvidia';
   if (/^sk-or-/.test(k)) return 'openrouter';
@@ -37,8 +38,30 @@ export function detectProvider(key, baseUrl) {
 
 const newestFirst = (a, b) => (b.created || 0) - (a.created || 0) || String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
 
+async function fetchSafeJson(url, opts = {}) {
+  await assertPublicUrl(url);
+  const res = await fetchSafeText(url, {
+    ...opts,
+    headers: { Accept: 'application/json', ...(opts.headers || {}) },
+  });
+  if (res.status < 200 || res.status >= 300) {
+    const err = new HttpError(`${new URL(url).hostname} responded ${res.status}`, res.status);
+    err.body = (res.text || '').slice(0, 2000);
+    throw err;
+  }
+  try {
+    return JSON.parse(res.text);
+  } catch {
+    throw new HttpError(`Invalid JSON from ${new URL(url).hostname}`, 502);
+  }
+}
+
 async function listOpenAiModels(baseUrl, key) {
-  const d = await fetchJson(`${baseUrl.replace(/\/$/, '')}/models`, { headers: key ? { Authorization: `Bearer ${key}` } : {}, maxBytes: 20_000_000 });
+  await assertPublicUrl(baseUrl);
+  const d = await fetchSafeJson(`${baseUrl.replace(/\/$/, '')}/models`, {
+    headers: key ? { Authorization: `Bearer ${key}` } : {},
+    maxBytes: 20_000_000,
+  });
   return (d.data || d.models || []).map((m) => ({ id: m.id || m.name, created: m.created || 0 }));
 }
 
@@ -119,9 +142,10 @@ const friendly = (e, provider) => {
 /** Send a tiny request to check that a model really answers with this key. */
 async function probe(baseUrl, key, model) {
   try {
-    await fetchJson(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    await assertPublicUrl(baseUrl);
+    await fetchSafeJson(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
-      timeout: 25000,
+      timeoutMs: 25000,
       headers: { 'Content-Type': 'application/json', ...(key && key !== 'local' ? { Authorization: `Bearer ${key}` } : {}) },
       body: JSON.stringify({ model, max_tokens: 8, messages: [{ role: 'user', content: 'Reply with OK' }] }),
     });
@@ -143,7 +167,7 @@ export async function testKey({ key, baseUrl }) {
   const k = String(key || '').trim();
   const base = String(baseUrl || '').trim().replace(/\/$/, '');
   const provider = detectProvider(k, base);
-  if (!provider) throw new Error('Could not recognise this key. Supported: Google Gemini (AIza...), Anthropic (sk-ant-...), OpenAI (sk-...), NVIDIA NIM (nvapi-...), Groq (gsk_...), xAI (xai-...), OpenRouter (sk-or-...), or any OpenAI-compatible endpoint (set the endpoint URL).');
+  if (!provider) throw new Error('Could not recognise this key. Supported: Google Gemini (AIza... or AQ....), Anthropic (sk-ant-...), OpenAI (sk-...), NVIDIA NIM (nvapi-...), Groq (gsk_...), xAI (xai-...), OpenRouter (sk-or-...), or any OpenAI-compatible endpoint (set the endpoint URL).');
   const id = `${provider}-${Date.now().toString(36)}`;
   try {
     if (provider === 'gemini') {
@@ -171,6 +195,7 @@ export async function testKey({ key, baseUrl }) {
     // OpenAI and OpenAI-compatible providers (NVIDIA NIM, Groq, xAI, OpenRouter, local)
     const url = base || PROVIDERS[provider].baseUrl;
     if (!url) throw new Error('Enter the endpoint URL for this provider.');
+    await assertPublicUrl(url);
     const listed = await listOpenAiModels(url, k);
     let models = pickModels(provider, listed, provider === 'nvidia' ? 6 : 4);
     if (!models.length) throw new Error('No chat models were found at this endpoint.');

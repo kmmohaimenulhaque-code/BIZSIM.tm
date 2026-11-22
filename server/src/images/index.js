@@ -8,6 +8,7 @@ import { config } from '../config.js';
 import { fetchJson, ttlCache } from '../lib/http.js';
 import { geminiGenerate } from '../ai/geminiModels.js';
 import { wikiLeadImage, wikiImageForQuery } from '../../../shared/wikiImage.js';
+import { buildSafeImagePrompt } from '../../../shared/imagePolicy.js';
 
 const searchCache = ttlCache(24 * 3600 * 1000, 300);
 
@@ -26,12 +27,11 @@ export function imageGenerationEnabled() {
   return (p === 'gemini' && Boolean(geminiKey)) || (p === 'openai' && Boolean(openaiKey));
 }
 
-const STYLE = 'Editorial photograph style, restrained monochrome palette with a subtle cool blue tint, architectural and abstract, no text, no logos, no recognisable real people.';
-
 export async function generateImage(prompt) {
   if (!imageGenerationEnabled()) throw new Error('Image generation is not configured');
   const clean = String(prompt || '').slice(0, 400);
-  const full = `${clean}. ${STYLE}`;
+  const full = buildSafeImagePrompt(clean);
+  if (!full) return null;
   const hash = crypto.createHash('sha256').update(`${config.images.provider}|${full}`).digest('hex').slice(0, 24);
   const dir = path.join(config.dataDir, 'generated');
   const file = path.join(dir, `${hash}.png`);

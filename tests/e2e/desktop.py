@@ -35,6 +35,14 @@ async def main():
         st = await pg.evaluate("fetch('/api/share').then(r=>r.status)")
         check('desktop page may manage phone access', st==200)
         check('notification permission granted in the app', await pg.evaluate("Notification.requestPermission()")=='granted')
+        # 1.7: language switch persists in the app; non-Latin report becomes a real PDF offline
+        await pg.evaluate("localStorage.setItem('bizsim.locale','bn')"); await pg.reload(); await pg.wait_for_timeout(1500)
+        check('desktop: Bengali interface after restart of the page', await pg.evaluate('document.documentElement.lang')=='bn')
+        n = await pg.evaluate("""async () => { const html = '<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \\'none\\'; style-src \\'unsafe-inline\\'; font-src data:"></head><body><h1>এম-পেসা মোবাইল মানি</h1><p dir="rtl" lang="ar">نص عربي</p><img src="https://example.com/x.png"></body></html>';
+          const b = await window.bizsimDesktop.htmlToPdf(html); return [b.length, String.fromCharCode(...b.slice(0,5))]; }""")
+        check('desktop: Bengali/Arabic HTML report printed to PDF (remote image blocked)', n[1]=='%PDF-' and n[0]>1000, str(n))
+        await pg.screenshot(path=SHOTS+'/32_desktop_bn.png')
+        await pg.evaluate("localStorage.setItem('bizsim.locale','en')")
         check('no page errors', not errs, str(errs[:2]))
         await b.close()
     p.terminate(); subprocess.run(['pkill','-f','linux-unpacked/bizsim']); time.sleep(2)

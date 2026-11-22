@@ -1,6 +1,12 @@
-import dns from 'node:dns/promises';
-import net from 'node:net';
 import { config } from '../config.js';
+import {
+  isPrivateIp,
+  assertPublicUrl as assertPublicUrlSafe,
+  fetchSafeText,
+  createBoundedRateLimiter,
+} from './netSafety.js';
+
+export { isPrivateIp, fetchSafeText, createBoundedRateLimiter };
 
 export class HttpError extends Error {
   constructor(message, status) {
@@ -9,46 +15,35 @@ export class HttpError extends Error {
   }
 }
 
-/** fetch with a timeout, a body-size limit and a descriptive User-Agent. */
+/** SSRF-hardened HTTP(S) fetch using DNS-pinned, redirect-validating transport. */
 export async function fetchText(url, { timeout = 12000, maxBytes = 3_000_000, headers = {}, method = 'GET', body } = {}) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeout);
+  let hostLabel = 'host';
   try {
-    const res = await fetch(url, {
+    hostLabel = new URL(url).hostname;
+  } catch {
+    throw new HttpError('Invalid URL', 400);
+  }
+  try {
+    const res = await fetchSafeText(url, {
       method,
       body,
-      redirect: 'follow',
-      signal: ctrl.signal,
+      timeoutMs: timeout,
+      maxBytes,
       headers: { 'User-Agent': config.userAgent, 'Accept-Language': 'en', ...headers },
     });
-    if (!res.ok) {
-      const err = new HttpError(`${new URL(url).hostname} responded ${res.status}`, res.status);
-      try {
-        err.body = (await res.text()).slice(0, 2000);
-      } catch {
-        err.body = '';
-      }
+    if (res.status < 200 || res.status >= 300) {
+      const err = new HttpError(`${hostLabel} responded ${res.status}`, res.status);
+      err.body = (res.text || '').slice(0, 2000);
       throw err;
     }
-    const reader = res.body.getReader();
-    const chunks = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.length;
-      if (size > maxBytes) {
-        ctrl.abort();
-        break;
-      }
-      chunks.push(value);
-    }
-    return { text: Buffer.concat(chunks).toString('utf8'), url: res.url, headers: res.headers };
+    return { text: res.text, url: res.finalUrl, headers: res.headers };
   } catch (e) {
-    if (e.name === 'AbortError') throw new HttpError(`${new URL(url).hostname} timed out`, 504);
+    if (e instanceof HttpError) throw e;
+    if (/timed? ?out/i.test(e?.message || '')) throw new HttpError(`${hostLabel} timed out`, 504);
+    if (/Blocked|Invalid URL|Disallowed|credentials|private|numeric IP|Too many redirects/i.test(e?.message || '')) {
+      throw new HttpError(e.message, 400);
+    }
     throw e;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -61,27 +56,14 @@ export async function fetchJson(url, opts = {}) {
   }
 }
 
-function isPrivateIp(ip) {
-  if (net.isIPv4(ip)) {
-    const [a, b] = ip.split('.').map(Number);
-    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224;
-  }
-  const v = ip.toLowerCase();
-  return v === '::1' || v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe80') || v === '::';
-}
-
 /** Guard against server-side request forgery when fetching third-party URLs. */
 export async function assertPublicUrl(raw) {
-  let u;
   try {
-    u = new URL(raw);
-  } catch {
-    throw new HttpError('Invalid URL', 400);
+    const { url } = await assertPublicUrlSafe(raw);
+    return url;
+  } catch (e) {
+    throw new HttpError(e.message || 'Blocked destination URL', 400);
   }
-  if (!['http:', 'https:'].includes(u.protocol)) throw new HttpError('Only http(s) URLs are allowed', 400);
-  const { address } = await dns.lookup(u.hostname);
-  if (isPrivateIp(address)) throw new HttpError('Refusing to fetch a private network address', 400);
-  return u;
 }
 
 /** Minimal robots.txt check for the generic user agent. */
@@ -126,19 +108,14 @@ export function ttlCache(ttlMs, max = 500) {
   };
 }
 
-/** Per-key fixed-window rate limiter for expensive endpoints. */
-export function rateLimiter({ windowMs, max }) {
-  const hits = new Map();
+/** Per-key bounded fixed-window rate limiter for expensive endpoints. */
+export function rateLimiter({ windowMs, max, maxKeys = 10_000 }) {
+  const checkLimit = createBoundedRateLimiter({ windowMs, max, maxKeys });
   return (req, res, next) => {
     const key = req.ip || 'local';
-    const now = Date.now();
-    const e = hits.get(key);
-    if (!e || now > e.reset) {
-      hits.set(key, { n: 1, reset: now + windowMs });
-      return next();
-    }
-    if (++e.n > max) {
-      res.setHeader('Retry-After', Math.ceil((e.reset - now) / 1000));
+    const r = checkLimit(key);
+    if (!r.ok) {
+      res.setHeader('Retry-After', Math.max(1, Math.ceil((r.resetAt - Date.now()) / 1000)));
       return res.status(429).json({ error: 'Too many requests. Please wait a moment and try again.' });
     }
     next();
@@ -161,9 +138,37 @@ export function decodeEntities(s = '') {
 // Masks anything that looks like a provider credential before it reaches a
 // response, an event stream or a log. Defence in depth: errors are written not
 // to contain keys in the first place.
-const SECRET_PATTERNS = [/AIza[0-9A-Za-z_-]{20,}/g, /sk-(?:ant-|or-|proj-)?[0-9A-Za-z_-]{16,}/g, /nvapi-[0-9A-Za-z_-]{16,}/g, /gsk_[0-9A-Za-z]{16,}/g, /xai-[0-9A-Za-z]{16,}/g, /Bearer\s+[0-9A-Za-z._-]{12,}/gi, /([?&](?:key|api_key|token)=)[^&\s]+/gi];
+const SECRET_PATTERNS = [
+  /AIza[0-9A-Za-z_-]{20,}/g,
+  /AQ\.[0-9A-Za-z._-]{20,}/g,
+  /sk-(?:ant-|or-|proj-)?[0-9A-Za-z_-]{16,}/g,
+  /nvapi-[0-9A-Za-z_-]{16,}/g,
+  /gsk_[0-9A-Za-z]{16,}/g,
+  /xai-[0-9A-Za-z]{16,}/g,
+  /Bearer\s+[0-9A-Za-z._-]{12,}/gi,
+  /(x-(?:goog-api-key|api-key|bizsim-keys|bizsim-sealed-keys|bizsim-admin|bizsim-public-token)\s*[:=]\s*)[^\s,;]+/gi,
+  /([?&](?:key|api_key|token)=)[^&\s]+/gi,
+];
+
 export function redactSecrets(text) {
   let s = String(text ?? '');
-  for (const re of SECRET_PATTERNS) s = s.replace(re, (m, p1) => (typeof p1 === 'string' && m.startsWith(p1) ? `${p1}[redacted]` : '[redacted]'));
+  for (const re of SECRET_PATTERNS) {
+    s = s.replace(re, (m, p1) => (typeof p1 === 'string' && m.startsWith(p1) ? `${p1}[redacted]` : '[redacted]'));
+  }
   return s;
+}
+
+/** Recursively redact secret patterns inside strings, arrays, and plain objects. */
+export function redactSecretsDeep(value, depth = 0) {
+  if (depth > 8 || value === null || value === undefined) return value;
+  if (typeof value === 'string') return redactSecrets(value);
+  if (Array.isArray(value)) return value.map((v) => redactSecretsDeep(v, depth + 1));
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = redactSecretsDeep(v, depth + 1);
+    }
+    return out;
+  }
+  return value;
 }

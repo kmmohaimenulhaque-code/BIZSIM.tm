@@ -1,4 +1,4 @@
-import { redactSecrets } from './lib/http.js';
+import { redactSecrets, redactSecretsDeep } from './lib/http.js';
 // Background jobs for long tasks (live research, chat builder).
 // A job keeps running on the server even if the app disconnects: the phone can
 // switch screens, go to the background or lose the connection, then reconnect
@@ -22,9 +22,9 @@ function prune() {
 export function startJob(kind, meta, run) {
   prune();
   if ([...jobs.values()].filter((j) => !j.done).length >= 20) throw Object.assign(new Error('Too many tasks are running. Try again in a minute.'), { status: 429 });
-  const job = { id: crypto.randomUUID(), kind, meta, events: [], listeners: new Set(), done: false, createdAt: Date.now(), endedAt: 0 };
+  const job = { id: crypto.randomBytes(24).toString('base64url'), kind, meta, events: [], listeners: new Set(), done: false, createdAt: Date.now(), endedAt: 0 };
   const emit = (event, data) => {
-    const ev = { i: job.events.length, event, data };
+    const ev = { i: job.events.length, event, data: redactSecretsDeep(data) };
     job.events.push(ev);
     for (const f of job.listeners) f(ev);
   };
@@ -42,28 +42,55 @@ export function startJob(kind, meta, run) {
 
 export const getJob = (id) => jobs.get(String(id)) || null;
 
+const SSE_IDLE_MS = 300_000; // 5 min without events
+const SSE_MAX_MS = 600_000;  // 10 min max stream duration
+
 /** Stream a job's events as server-sent events, starting from event number `from`. */
-export function streamJob(job, from, req, res) {
+export function streamJob(job, from, req, res, { onClose, idleMs = SSE_IDLE_MS, maxMs = SSE_MAX_MS } = {}) {
   res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
   let closed = false;
+  let idleTimer = null;
+  let maxTimer = null;
+  const finish = () => {
+    if (closed) return;
+    closed = true;
+    clearInterval(ping);
+    if (idleTimer) clearTimeout(idleTimer);
+    if (maxTimer) clearTimeout(maxTimer);
+    job.listeners.delete(listener);
+    onClose?.();
+    res.end();
+  };
+  const closeWithTimeout = (reason) => {
+    if (!closed) {
+      res.write(`event: failure\ndata: ${JSON.stringify({ message: reason })}\n\n`);
+      res.write(`event: end\ndata: {}\n\n`);
+    }
+    finish();
+  };
+  const resetIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => closeWithTimeout('Stream closed due to inactivity.'), idleMs);
+  };
   const send = (ev) => {
-    if (!closed) res.write(`id: ${ev.i}\nevent: ${ev.event}\ndata: ${JSON.stringify(ev.data)}\n\n`);
+    if (!closed) {
+      res.write(`id: ${ev.i}\nevent: ${ev.event}\ndata: ${JSON.stringify(redactSecretsDeep(ev.data))}\n\n`);
+      resetIdle();
+    }
   };
   const start = Math.max(0, Number(from) || 0);
   for (const ev of job.events.slice(start)) send(ev);
-  if (job.done) return res.end();
+  if (job.done) {
+    onClose?.();
+    return res.end();
+  }
   const listener = (ev) => {
     send(ev);
     if (ev.event === 'end') finish();
   };
   const ping = setInterval(() => !closed && res.write(': ping\n\n'), 15000);
-  const finish = () => {
-    if (closed) return;
-    closed = true;
-    clearInterval(ping);
-    job.listeners.delete(listener);
-    res.end();
-  };
+  resetIdle();
+  maxTimer = setTimeout(() => closeWithTimeout('Stream reached maximum duration.'), maxMs);
   job.listeners.add(listener);
   res.on('close', finish);
 }

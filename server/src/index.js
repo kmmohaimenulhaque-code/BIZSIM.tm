@@ -1,6 +1,8 @@
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { config, llmModel, requestKeys, KEY_NAMES } from './config.js';
 import { testKey, saveSettings, loadSavedSettings, describeKeys, updateChain, PROVIDERS } from './ai/keys.js';
@@ -10,8 +12,10 @@ import { startJob, getJob, streamJob } from './jobs.js';
 import { searchImages, generateImage, imageGenerationEnabled } from './images/index.js';
 import { llmEnabled } from './ai/llm.js';
 import { currentGeminiModel } from './ai/geminiModels.js';
-import { rateLimiter, redactSecrets } from './lib/http.js';
+import { rateLimiter, redactSecrets, redactSecretsDeep } from './lib/http.js';
+import { createConcurrencyLimiter, checkPublicAiToken } from './lib/netSafety.js';
 import { CASES } from '../../shared/cases/index.js';
+import { cleanLocale } from '../../shared/locales.js';
 import { BOOKS, PRINCIPLES } from '../../shared/books.js';
 import { CATALOGUE } from '../../shared/catalogue.js';
 import { enableShare, disableShare, shareState, initPairingStore, revokeDevice, revokeAll, newPairingCode } from './share.js';
@@ -22,15 +26,41 @@ const pkg = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta
 export function createApp({ clientDist = config.clientDist } = {}) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback');
+  app.set('trust proxy', config.trustProxy);
+  const logSecurityEvent = (event, req, detail = '') => {
+    const ip = req?.ip || 'unknown';
+    const pathOnly = String(req?.path || '').slice(0, 120);
+    const note = detail ? ` (${redactSecrets(detail).slice(0, 120)})` : '';
+    console.warn(`[security] ${event} ip=${ip} path=${pathOnly}${note}`);
+  };
+
+  // Reject overly long URLs/query strings early (DDoS / log-bloat defense).
+  app.use((req, res, next) => {
+    if (String(req.url || '').length > 2048) {
+      logSecurityEvent('uri_too_long', req);
+      return res.status(414).json({ error: 'Request URI too long.' });
+    }
+    next();
+  });
   app.use(express.json({ limit: '200kb' }));
 
   app.use((req, res, next) => {
     const json = res.json.bind(res);
     res.json = (body) => json(body && typeof body.error === 'string' ? { ...body, error: redactSecrets(body.error) } : body);
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; img-src 'self' https://upload.wikimedia.org https://thumb.wikimedia.org https://commons.wikimedia.org http://localhost:* http://127.0.0.1:* data: blob:; " +
+        "style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; " +
+        "connect-src 'self' https: http://localhost:* http://127.0.0.1:*; " +
+        "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    );
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    if (req.secure || String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase() === 'https') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     next();
   });
 
@@ -43,14 +73,22 @@ export function createApp({ clientDist = config.clientDist } = {}) {
       return next();
     }
     const allowAll = config.corsOrigins.includes('*');
-    if (origin && (allowAll || config.corsOrigins.includes(origin))) {
+    const isLocalPortOrigin =
+      !config.corsOriginsExplicit &&
+      typeof origin === 'string' &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+    if (origin && (allowAll || config.corsOrigins.includes(origin) || isLocalPortOrigin)) {
       res.setHeader('Access-Control-Allow-Origin', allowAll ? '*' : origin);
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-BizSim-Keys, X-BizSim-Admin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-BizSim-Keys, X-BizSim-Admin, X-BizSim-Public-Token, Authorization');
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     }
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
+
+  // Global bounded rate limit across all /api/* traffic (120 req/min/IP).
+  // Stricter per-route limiters remain in force on expensive/sensitive endpoints below.
+  app.use('/api', rateLimiter({ windowMs: 60_000, max: 120 }));
 
   // Device keys: a user's own API keys sent with their requests (never stored on the server).
   // Over Wi-Fi they arrive sealed with the pairing session key (shared/sealed.js);
@@ -92,8 +130,14 @@ export function createApp({ clientDist = config.clientDist } = {}) {
   };
 
   // Who may change the keys saved on this server: the computer itself, or an admin token.
+  const timingSafeEq = (a, b) => {
+    const ba = Buffer.from(String(a || ''), 'utf8');
+    const bb = Buffer.from(String(b || ''), 'utf8');
+    return ba.length > 0 && ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
+  };
+
   const canManage = (req) => {
-    if (config.adminToken && req.headers['x-bizsim-admin'] === config.adminToken) return true;
+    if (config.adminToken && timingSafeEq(req.headers['x-bizsim-admin'], config.adminToken)) return true;
     if (!sameOriginLocal(req)) return false;
     const ip = req.ip || '';
     const loop = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip);
@@ -112,8 +156,12 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     }
   });
 
-  app.post('/api/keys', async (req, res) => {
-    if (!canManage(req)) return res.status(403).json({ error: 'Keys can only be saved on the server from the computer it runs on.' });
+  const keysLimit = rateLimiter({ windowMs: 60_000, max: 30 });
+  app.post('/api/keys', keysLimit, async (req, res) => {
+    if (!canManage(req)) {
+      logSecurityEvent('admin_denied', req, 'POST /api/keys');
+      return res.status(403).json({ error: 'Keys can only be saved on the server from the computer it runs on.' });
+    }
     try {
       await saveSettings(req.body?.settings || {});
       res.json({ ok: true, ...describeKeys() });
@@ -122,8 +170,11 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     }
   });
 
-  app.post('/api/keys/chain', async (req, res) => {
-    if (!canManage(req)) return res.status(403).json({ error: 'Keys can only be changed on the computer BIZSIM runs on.' });
+  app.post('/api/keys/chain', keysLimit, async (req, res) => {
+    if (!canManage(req)) {
+      logSecurityEvent('admin_denied', req, 'POST /api/keys/chain');
+      return res.status(403).json({ error: 'Keys can only be changed on the computer BIZSIM runs on.' });
+    }
     try {
       res.json({ ok: true, ...(await updateChain(req.body?.op)) });
     } catch (e) {
@@ -155,6 +206,8 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     if (!local || !sameOriginLocal(req) || process.env.BIZSIM_DESKTOP !== '1') return res.status(403).json({ error: 'Only available in the desktop app on this computer' });
     next();
   };
+  const shareLimit = rateLimiter({ windowMs: 60_000, max: 30 });
+  app.use('/api/share', shareLimit);
   app.get('/api/share', loopbackOnly, (req, res) => res.json(shareState()));
   app.post('/api/share', loopbackOnly, async (req, res) => {
     try {
@@ -173,14 +226,51 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     res.json(shareState());
   });
 
-  app.get('/api/cases', (req, res) => res.json(CASES));
-  app.get('/api/library', (req, res) => res.json({ books: BOOKS, principles: PRINCIPLES }));
-  app.get('/api/catalogue', (req, res) => res.json(CATALOGUE));
+  // Pre-serialize & gzip static catalog endpoints once to cut egress bandwidth (~75-80%)
+  // and prevent repeated heavy JSON downloads from exhausting server bandwidth.
+  const makeStaticJsonResponder = (data) => {
+    const raw = Buffer.from(JSON.stringify(data), 'utf8');
+    const gz = zlib.gzipSync(raw, { level: 6 });
+    return (req, res) => {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Vary', 'Accept-Encoding');
+      if (/\bgzip\b/i.test(String(req.headers['accept-encoding'] || ''))) {
+        res.setHeader('Content-Encoding', 'gzip');
+        return res.send(gz);
+      }
+      return res.send(raw);
+    };
+  };
+  const catalogLimit = rateLimiter({ windowMs: 60_000, max: 30 });
+  app.get('/api/cases', catalogLimit, makeStaticJsonResponder(CASES));
+  app.get('/api/library', catalogLimit, makeStaticJsonResponder({ books: BOOKS, principles: PRINCIPLES }));
+  app.get('/api/catalogue', catalogLimit, makeStaticJsonResponder(CATALOGUE));
+
+  // Optional public-web AI gate: active only when BIZSIM_PUBLIC_AI_TOKEN is set.
+  const publicAiGate = (req, res, next) => {
+    const check = checkPublicAiToken(req.headers, config.publicAiToken);
+    if (!check.ok) {
+      logSecurityEvent('public_ai_token_denied', req);
+      return res.status(401).json({ error: 'Public AI access token required.' });
+    }
+    next();
+  };
+
+  // Cap concurrent long-lived SSE streams per IP (prevents connection exhaustion).
+  const sseSlot = createConcurrencyLimiter({ maxPerKey: 3, maxKeys: 5_000 });
+  const SSE_IDLE_MS = 300_000;
+  const SSE_MAX_MS = 600_000;
 
   const researchLimit = rateLimiter({ windowMs: 60_000, max: 8 });
 
   // Server-Sent Events: stream real stage progress and sources as they arrive.
-  app.get('/api/research/stream', researchLimit, async (req, res) => {
+  app.get('/api/research/stream', publicAiGate, researchLimit, async (req, res) => {
+    const slot = sseSlot(req.ip || 'local');
+    if (!slot.ok) {
+      res.setHeader('Retry-After', '15');
+      return res.status(429).json({ error: 'Too many active streams from this address. Please wait for a task to finish.' });
+    }
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
@@ -188,84 +278,155 @@ export function createApp({ clientDist = config.clientDist } = {}) {
       'X-Accel-Buffering': 'no',
     });
     let closed = false;
-    req.on('close', () => {
+    let idleTimer = null;
+    let maxTimer = null;
+    const finish = () => {
+      if (closed) return;
       closed = true;
-    });
+      clearInterval(ping);
+      if (idleTimer) clearTimeout(idleTimer);
+      if (maxTimer) clearTimeout(maxTimer);
+      slot.release();
+      res.end();
+    };
+    const resetIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (!closed) {
+          res.write(`event: failure\ndata: ${JSON.stringify({ message: 'Stream closed due to inactivity.' })}\n\n`);
+          res.write(`event: end\ndata: {}\n\n`);
+        }
+        finish();
+      }, SSE_IDLE_MS);
+    };
+    req.on('close', finish);
     const emit = (event, data) => {
-      if (!closed) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      if (!closed) {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(redactSecretsDeep(data))}\n\n`);
+        resetIdle();
+      }
     };
     const ping = setInterval(() => !closed && res.write(': ping\n\n'), 15000);
+    resetIdle();
+    maxTimer = setTimeout(() => {
+      if (!closed) {
+        res.write(`event: failure\ndata: ${JSON.stringify({ message: 'Stream reached maximum duration.' })}\n\n`);
+        res.write(`event: end\ndata: {}\n\n`);
+      }
+      finish();
+    }, SSE_MAX_MS);
     try {
-      await runResearch(req.query.q, emit, { generate: req.query.generate !== '0' });
+      await runResearch(req.query.q, emit, { generate: req.query.generate !== '0', locale: cleanLocale(req.query.locale) });
     } catch (e) {
-      emit('failure', { message: redactSecrets(e.message || 'Research failed') });
+      emit('failure', { message: redactSecrets(e?.message || 'Research failed') });
     } finally {
-      clearInterval(ping);
       emit('end', {});
-      res.end();
+      finish();
     }
   });
 
   // Background jobs: research and the chat builder keep running when the app
   // disconnects, and the app can reconnect and replay what it missed.
-  app.post('/api/jobs/research', researchLimit, (req, res) => {
+  app.post('/api/jobs/research', publicAiGate, researchLimit, (req, res) => {
     const q = String(req.body?.q || '').trim();
     if (q.length < 2) return res.status(400).json({ error: 'Enter a company name.' });
     try {
-      const job = startJob('research', { q }, (emit) => runResearch(q, emit, { generate: req.body?.generate !== false }));
+      const locale = cleanLocale(req.body?.locale);
+      const job = startJob('research', { q, locale }, (emit) => runResearch(q, emit, { generate: req.body?.generate !== false, locale }));
       res.json({ id: job.id });
     } catch (e) {
       res.status(e.status || 500).json({ error: e.message });
     }
   });
-  app.post('/api/jobs/chat', rateLimiter({ windowMs: 60_000, max: 10 }), (req, res) => {
+  const chatLimit = rateLimiter({ windowMs: 60_000, max: 10 });
+  app.post('/api/jobs/chat', publicAiGate, chatLimit, (req, res) => {
     if (!llmEnabled()) return res.status(400).json({ error: 'The chat builder needs an AI key. Add one in Settings > AI keys.' });
     try {
-      const job = startJob('chat', {}, (emit) => chatTurn({ messages: req.body?.messages, userPrinciples: req.body?.userPrinciples }, emit));
+      const job = startJob('chat', {}, (emit) => chatTurn({ messages: req.body?.messages, userPrinciples: req.body?.userPrinciples, locale: cleanLocale(req.body?.locale) }, emit));
       res.json({ id: job.id });
     } catch (e) {
       res.status(e.status || 500).json({ error: e.message });
     }
   });
-  app.get('/api/jobs/:id/events', (req, res) => {
+  const eventsLimit = rateLimiter({ windowMs: 60_000, max: 60 });
+  app.get('/api/jobs/:id/events', eventsLimit, (req, res) => {
     const job = getJob(req.params.id);
     if (!job) return res.status(404).json({ error: 'This task is no longer on the server (it may have restarted). Please run it again.' });
-    streamJob(job, req.query.from, req, res);
+    const slot = sseSlot(req.ip || 'local');
+    if (!slot.ok) {
+      res.setHeader('Retry-After', '15');
+      return res.status(429).json({ error: 'Too many active streams from this address. Please wait for a task to finish.' });
+    }
+    streamJob(job, req.query.from, req, res, { onClose: () => slot.release(), idleMs: SSE_IDLE_MS, maxMs: SSE_MAX_MS });
   });
 
   // Chat season builder: natural language in, playable seasons out (streamed).
-  const chatLimit = rateLimiter({ windowMs: 60_000, max: 10 });
-  app.post('/api/chat', chatLimit, async (req, res) => {
+  app.post('/api/chat', publicAiGate, chatLimit, async (req, res) => {
     if (!llmEnabled()) return res.status(400).json({ error: 'The chat builder needs an AI key. Add one in Settings > AI keys.' });
+    const slot = sseSlot(req.ip || 'local');
+    if (!slot.ok) {
+      res.setHeader('Retry-After', '15');
+      return res.status(429).json({ error: 'Too many active streams from this address. Please wait for a task to finish.' });
+    }
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     let closed = false;
-    res.on('close', () => {
+    let idleTimer = null;
+    let maxTimer = null;
+    const finish = () => {
+      if (closed) return;
       closed = true;
-    });
+      clearInterval(ping);
+      if (idleTimer) clearTimeout(idleTimer);
+      if (maxTimer) clearTimeout(maxTimer);
+      slot.release();
+      res.end();
+    };
+    const resetIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        if (!closed) {
+          res.write(`event: failure\ndata: ${JSON.stringify({ message: 'Stream closed due to inactivity.' })}\n\n`);
+          res.write(`event: end\ndata: {}\n\n`);
+        }
+        finish();
+      }, SSE_IDLE_MS);
+    };
+    res.on('close', finish);
     const emit = (event, data) => {
-      if (!closed) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      if (!closed) {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(redactSecretsDeep(data))}\n\n`);
+        resetIdle();
+      }
     };
     const ping = setInterval(() => !closed && res.write(': ping\n\n'), 15000);
+    resetIdle();
+    maxTimer = setTimeout(() => {
+      if (!closed) {
+        res.write(`event: failure\ndata: ${JSON.stringify({ message: 'Stream reached maximum duration.' })}\n\n`);
+        res.write(`event: end\ndata: {}\n\n`);
+      }
+      finish();
+    }, SSE_MAX_MS);
     try {
-      await chatTurn({ messages: req.body?.messages, userPrinciples: req.body?.userPrinciples }, emit);
+      await chatTurn({ messages: req.body?.messages, userPrinciples: req.body?.userPrinciples, locale: cleanLocale(req.body?.locale) }, emit);
     } catch (e) {
-      emit('failure', { message: redactSecrets(e.message || 'The chat builder failed') });
+      emit('failure', { message: redactSecrets(e?.message || 'The chat builder failed') });
     } finally {
-      clearInterval(ping);
       emit('end', {});
-      res.end();
+      finish();
     }
   });
 
-  app.post('/api/research', researchLimit, async (req, res) => {
+  app.post('/api/research', publicAiGate, researchLimit, async (req, res) => {
     try {
-      res.json(await runResearch(req.body?.query, undefined, { generate: req.body?.generate !== false }));
+      res.json(await runResearch(req.body?.query, undefined, { generate: req.body?.generate !== false, locale: cleanLocale(req.body?.locale) }));
     } catch (e) {
       res.status(400).json({ error: e.message });
     }
   });
 
-  app.get('/api/images/search', async (req, res) => {
+  const imageSearchLimit = rateLimiter({ windowMs: 60_000, max: 30 });
+  app.get('/api/images/search', imageSearchLimit, async (req, res) => {
     try {
       res.setHeader('Cache-Control', 'public, max-age=3600');
       res.json(await searchImages(req.query.q));
@@ -274,23 +435,32 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     }
   });
 
-  app.post('/api/images/generate', rateLimiter({ windowMs: 60_000, max: 4 }), async (req, res) => {
+  app.post('/api/images/generate', publicAiGate, rateLimiter({ windowMs: 60_000, max: 4 }), async (req, res) => {
     try {
-      res.json(await generateImage(req.body?.prompt));
+      const img = await generateImage(req.body?.prompt);
+      if (!img) return res.status(400).json({ error: 'Image prompt rejected by content safety policy.', blocked: true });
+      res.json(img);
     } catch (e) {
       res.status(imageGenerationEnabled() ? 502 : 412).json({ error: e.message });
     }
   });
 
-  app.use('/generated', express.static(path.join(config.dataDir, 'generated'), { maxAge: '30d', immutable: true }));
+  app.use('/generated', express.static(path.join(config.dataDir, 'generated'), { maxAge: '30d', immutable: true, dotfiles: 'deny' }));
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
   // Serve the built client (single-page app).
   if (fs.existsSync(path.join(clientDist, 'index.html'))) {
-    app.use(express.static(clientDist, { index: false, maxAge: '1h' }));
+    app.use(express.static(clientDist, { index: false, maxAge: '1h', dotfiles: 'deny' }));
     app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
   }
+
+  // Final Express error handler: always redact secrets and never expose stack traces.
+  app.use((err, _req, res, _next) => {
+    const status = err?.status || err?.statusCode || 500;
+    const msg = status === 413 ? 'Request payload too large.' : redactSecrets(err?.message || 'Internal server error');
+    res.status(status).json({ error: msg });
+  });
 
   return app;
 }
@@ -301,16 +471,29 @@ export async function startServer({ port = config.port, host = config.host, clie
   const app = createApp({ clientDist });
   return new Promise((resolve, reject) => {
     const server = app.listen(port, host, () => resolve(server));
+    server.headersTimeout = 15_000;
+    server.keepAliveTimeout = 65_000;
+    server.maxHeadersCount = 64;
+    server.maxConnections = Number(process.env.MAX_CONNECTIONS || 512);
     server.once('error', reject);
   });
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled rejection:', redactSecrets(err?.message || String(err)));
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', redactSecrets(err?.message || String(err)));
+  });
   const server = await startServer();
   const { port } = server.address();
   console.log(`BIZSIM server running on http://localhost:${port}`);
   console.log(`  AI case synthesis: ${llmEnabled() ? `${config.llm.provider} (${llmModel()})` : 'off (add a key in Settings, or set GEMINI_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY or AI_KEYS)'}`);
   console.log(`  Image generation:  ${imageGenerationEnabled() ? config.images.provider : 'off (Wikipedia images only)'}`);
   console.log(`  SEC EDGAR:         ${config.secUserAgent ? 'on' : 'off, set SEC_USER_AGENT="Your Name your@email.com"'}`);
+  if (process.env.NODE_ENV === 'production' && config.corsOrigins.includes('*')) {
+    console.warn('  WARNING: CORS_ORIGINS includes "*" in production; set explicit origin(s) instead.');
+  }
 }

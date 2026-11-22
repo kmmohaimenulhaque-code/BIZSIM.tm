@@ -8,7 +8,8 @@
 // repaired (missing commas, unclosed brackets, trailing text) before giving up.
 import { jsonrepair } from 'jsonrepair';
 import { config } from '../config.js';
-import { fetchJson, HttpError } from '../lib/http.js';
+import { fetchJson, HttpError, redactSecrets } from '../lib/http.js';
+import { assertPublicUrl, fetchSafeText } from '../lib/netSafety.js';
 import { geminiGenerate } from './geminiModels.js';
 import { deepNoEmDash } from '../../../shared/text.js';
 
@@ -94,6 +95,7 @@ const COMPACT = new Set(['nvidia', 'groq', 'openrouter', 'custom']);
 const COMPACT_RULE = 'Keep every text field short (one or two sentences) so the whole JSON object is complete.';
 
 async function callOpenAiCompatible(entry, model, { system, user, maxTokens, timeout, json = true }) {
+  await assertPublicUrl(entry.baseUrl);
   const url = `${(entry.baseUrl || '').replace(/\/$/, '')}/chat/completions`;
   let jsonMode = json && JSON_MODE.has(entry.provider);
   let maxOut = Math.min(maxTokens, MAX_OUT[entry.provider] || maxTokens);
@@ -115,13 +117,24 @@ async function callOpenAiCompatible(entry, model, { system, user, maxTokens, tim
       body.max_completion_tokens = maxOut;
     }
     try {
-      const d = await fetchJson(url, {
+      const res = await fetchSafeText(url, {
         method: 'POST',
-        timeout,
+        timeoutMs: timeout,
         maxBytes: 8_000_000,
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(entry.key && entry.key !== 'local' ? { Authorization: `Bearer ${entry.key}` } : {}) },
         body: JSON.stringify(body),
       });
+      if (res.status < 200 || res.status >= 300) {
+        const httpErr = new HttpError(`${new URL(url).hostname} responded ${res.status}`, res.status);
+        httpErr.body = (res.text || '').slice(0, 2000);
+        throw httpErr;
+      }
+      let d;
+      try {
+        d = JSON.parse(res.text);
+      } catch {
+        throw new HttpError(`Invalid JSON from ${new URL(url).hostname}`, 502);
+      }
       const msg = d.choices?.[0]?.message || {};
       const text = typeof msg.content === 'string' ? msg.content : Array.isArray(msg.content) ? msg.content.map((c) => c.text || '').join('') : '';
       if (!text && msg.reasoning_content) return msg.reasoning_content;
@@ -171,8 +184,8 @@ function shortReason(e) {
     if (e.status >= 500) return `provider error ${e.status}`;
     return `request failed (${e.status})`;
   }
-  if (/abort|timed? ?out/i.test(e.message)) return 'timed out';
-  return String(e.message || e).slice(0, 120);
+  if (/abort|timed? ?out/i.test(e?.message || '')) return 'timed out';
+  return redactSecrets(String(e?.message || e)).slice(0, 120);
 }
 
 /**
@@ -226,6 +239,10 @@ export async function completeJson({ system, user, maxTokens = 8000, validate, o
       ? `Every AI key is rate-limited right now. Wait a minute and try again. (${list})`
       : `The AI could not produce a usable case after ${failures.length} attempt${failures.length === 1 ? '' : 's'}. ${list}`,
   );
+  err.message = redactSecrets(err.message);
+  err.code = 'PROVIDER_UNAVAILABLE';
+  err.provider = chain[0]?.provider || null;
+  err.retryable = true;
   err.failures = failures;
   throw err;
 }
@@ -244,5 +261,9 @@ export async function completeText({ system, messages, maxTokens = 1200, timeout
       lastErr = e;
     }
   }
-  throw new Error(`No AI model answered: ${shortReason(lastErr)}`);
+  const err = new Error(redactSecrets(`No AI model answered: ${shortReason(lastErr)}`));
+  err.code = 'PROVIDER_UNAVAILABLE';
+  err.provider = chain[0]?.provider || null;
+  err.retryable = true;
+  throw err;
 }

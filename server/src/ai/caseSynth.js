@@ -2,13 +2,15 @@
 // The model may only cite sources present in the dossier and principles present
 // in the BIZSIM library; deterministic gates remove anything else.
 import { writeSeasonParts } from './seasonWriter.js';
+import { languageInstruction, cleanLocale, promptLanguage } from '../../../shared/locales.js';
 import { validateCase } from '../../../shared/validate.js';
 import { wikipediaArticle } from '../research/wikiArticle.js';
 import { checkCaseClaims } from '../../../shared/evidenceCheck.js';
+import { sanitizeImageUrl } from '../../../shared/imagePolicy.js';
 
 const SYSTEM = `You are BIZSIM's case architect. You write rigorous, neutral executive business cases for learners.
 Rules:
-- Use ONLY the facts in the dossier. Every evidence item and outcome must cite a dossier source id (e.g. "S2"). Never invent numbers, dates, people or events.
+- Use ONLY the facts in the dossier. Clearly separate Verified Fact (must cite a sourceId present in sources, e.g. "S2") from AI Analysis / Hypothetical (must set kind: "analysis" or "hypothetical" and never fabricate a URL or historical citation). Never invent numbers, dates, people or events.
 - Where the dossier lacks information, say so plainly in "uncertainties" rather than guessing.
 - The case is a SEASON of exactly 4 EPISODES in chronological order. Each episode holds 2 or 3 linked decisions and ends with its own outcome and insight.
   - Episodes I to III are real past turning points of THIS company documented in the dossier. Never invent past events: if the dossier documents fewer turning points, mark the missing episodes "live": true instead.
@@ -53,7 +55,8 @@ export function buildDossier(r) {
   return { text: lines.join('\n'), sources };
 }
 
-export async function synthesiseCase(research, onProgress) {
+export async function synthesiseCase(research, onProgress, { locale = null } = {}) {
+  const lang = cleanLocale(locale);
   if (research.wikipedia && !research.wikipediaFull) {
     try {
       research.wikipediaFull = (await wikipediaArticle(research.wikipedia.title, 30000)).text;
@@ -73,7 +76,7 @@ ${dossier.text}`;
   const slug = (research.profile?.name || research.query).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const sourceIds = dossier.sources.map((x) => x.id);
   const parts = await writeSeasonParts({
-    system: SYSTEM,
+    system: SYSTEM + languageInstruction(lang) + (lang && lang !== 'en' ? `\nWrite ALL user-facing prose—including title, summary, dilemmas, evidence, outcomes, and baseRate—strictly in ${promptLanguage(lang)} (${lang}). Do not mix English prose into non-English responses.` : ''),
     brief,
     sourceIds,
     liveLast: true,
@@ -100,9 +103,11 @@ ${dossier.text}`;
     minutes: 18,
     classification: 'LIVE',
     source: 'generated',
+    contentLocale: lang && lang !== 'en' ? lang : undefined,
     generatedAt: new Date().toISOString(),
     imageQuery: research.profile?.name || research.query,
     wiki: research.wikipedia?.title || undefined,
+    cover: sanitizeImageUrl(research.wikipedia?.thumbnail, research.wikipedia?.title || research.query) || undefined,
     sources: dossier.sources.map(({ id, title, publisher, url, type, date }) => ({ id, title, publisher, url, type, date })),
     checkpoints: parts.checkpoints,
     episodes: parts.episodes,

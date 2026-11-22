@@ -4,6 +4,7 @@ import { seasonShape } from '../../../shared/episodes.js';
 import { resolveCompany, extractFacts, labelOf } from './wikidata.js';
 import { wikipediaSummary, findSecCompany, secFinancials, recentNews, readWebsite, wikipediaWebsite } from './sources.js';
 import { synthesiseCase } from '../ai/caseSynth.js';
+import { cleanLocale } from '../../../shared/locales.js';
 import { llmEnabled } from '../ai/llm.js';
 import { config } from '../config.js';
 import { ttlCache } from '../lib/http.js';
@@ -19,10 +20,11 @@ export const STAGES = [
 
 const cache = ttlCache(60 * 60 * 1000, 100);
 
-export async function runResearch(query, emit = () => {}, { generate = true } = {}) {
+export async function runResearch(query, emit = () => {}, { generate = true, locale = null } = {}) {
+  const lang = cleanLocale(locale) || 'en';
   const q = String(query || '').trim().slice(0, 120);
   if (q.length < 2) throw new Error('Enter a company name.');
-  const cacheKey = `${q.toLowerCase()}|${generate && llmEnabled()}`;
+  const cacheKey = `${q.toLowerCase()}|${generate && llmEnabled()}|${lang}`;
   const cached = cache.get(cacheKey);
   if (cached) {
     for (const s of STAGES) emit('stage', { id: s.id, status: cached.stages[s.id]?.status || 'done', detail: cached.stages[s.id]?.detail || 'Loaded from recent research' });
@@ -137,7 +139,7 @@ export async function runResearch(query, emit = () => {}, { generate = true } = 
   else {
     stage('synthesis', 'running');
     try {
-      result.generated = await synthesiseCase(result, (detail) => stage('synthesis', 'running', detail));
+      result.generated = await synthesiseCase(result, (detail) => stage('synthesis', 'running', detail), { locale: lang });
       stage('synthesis', 'done', `${seasonShape(result.generated.case)}${result.generated.case.model ? ` · ${result.generated.case.model}` : ''}`);
     } catch (e) {
       stage('synthesis', 'error', e.message);

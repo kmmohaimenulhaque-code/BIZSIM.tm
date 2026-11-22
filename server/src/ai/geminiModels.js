@@ -3,18 +3,32 @@
 // so BIZSIM (1) asks the API which models this key can use, (2) retries
 // overloaded/rate-limited calls with backoff, and (3) moves to the next-newest
 // model when one is missing (404) or keeps failing.
+import crypto from 'node:crypto';
 import { fetchJson, HttpError } from '../lib/http.js';
 
-const listCache = new Map(); // per API key
+const MAX_KEY_CACHE = 256;
+function cacheKeyId(apiKey) {
+  return crypto.createHash('sha256').update(String(apiKey || '')).digest('hex').slice(0, 24);
+}
+function setBounded(map, k, v) {
+  if (map.size >= MAX_KEY_CACHE && !map.has(k)) {
+    map.delete(map.keys().next().value);
+  }
+  map.set(k, v);
+}
+
+const listCache = new Map(); // keyed by hashed API key
 const preferredByKey = new Map();
 const prefFor = (key) => {
-  if (!preferredByKey.has(key)) preferredByKey.set(key, {});
-  return preferredByKey.get(key);
+  const kid = cacheKeyId(key);
+  if (!preferredByKey.has(kid)) setBounded(preferredByKey, kid, {});
+  return preferredByKey.get(kid);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function listModels(key) {
-  const hit = listCache.get(key);
+  const kid = cacheKeyId(key);
+  const hit = listCache.get(kid);
   if (hit && Date.now() - hit.at < 6 * 3600 * 1000) return hit.models;
   const models = [];
   let pageToken = '';
@@ -26,7 +40,7 @@ async function listModels(key) {
     if (!d.nextPageToken) break;
     pageToken = d.nextPageToken;
   }
-  listCache.set(key, { at: Date.now(), models });
+  setBounded(listCache, kid, { at: Date.now(), models });
   return models;
 }
 

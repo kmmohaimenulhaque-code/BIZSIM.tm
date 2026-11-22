@@ -144,7 +144,7 @@ async def main():
         await pg.screenshot(path=SHOTS+'/06_collection.png')
         await pg.get_by_role('button', name='Rename').click(); await pg.fill('#rn', 'Money matters'); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(200)
         check('rename collection', 'Money matters' in await pg.inner_text('main'))
-        await pg.get_by_role('button', name='← All collections').click()
+        await pg.get_by_role('button', name='All collections').click()
         await pg.fill('#col-search', 'Medici'); await pg.wait_for_timeout(200)
         await pg.fill('#col-search', ''); 
 
@@ -219,7 +219,7 @@ async def main():
             await mp.goto(B+path); await mp.wait_for_timeout(1200)
             ow = await mp.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
             check(f'mobile {path} has no horizontal overflow', ow<=1, f'overflow {ow}px')
-            await mp.screenshot(path=fSHOTS+'/{name}.png')
+            await mp.screenshot(path=f'{SHOTS}/{name}.png')
         await m.close()
         check('no page errors', not errs, '; '.join(sorted(set(errs))[:5]))
         await b.close()

@@ -185,18 +185,141 @@ const SITE_UA = 'Mozilla/5.0 (compatible; BIZSIM/1.6; +https://github.com/bizsim
 const SITE_HEADERS = { 'User-Agent': SITE_UA, Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'en,*;q=0.5' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function pageText(html) {
-  const body = html
-    .replace(/<(script|style|noscript|svg|nav|footer|header|form)[\s\S]*?<\/\1>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ');
+const SKIP_CONTAINERS = new Set(['script', 'style', 'noscript', 'svg', 'nav', 'footer', 'header', 'form']);
+const RAW_TEXT_CONTAINERS = new Set(['script', 'style', 'noscript']);
+const EXTRACT_BLOCKS = new Set(['h1', 'h2', 'h3', 'p', 'li']);
+const BOILERPLATE_RE = /cookie|javascript|subscribe|sign in|log in|©/i;
+
+/**
+ * Deterministic single-pass HTML -> plain-text extractor for research dossiers.
+ * Extracts text from h1, h2, h3, p, and li blocks while skipping comments and
+ * non-content containers (script, style, noscript, svg, nav, footer, header, form).
+ * Output is plain text only (capped at 4000 chars) and is never injected as HTML.
+ */
+export function pageText(html, maxLen = 4000) {
+  const src = String(html || '');
+  const n = src.length;
   const pieces = [];
-  const re = /<(h1|h2|h3|p|li)[^>]*>([\s\S]*?)<\/\1>/gi;
-  let m;
-  while ((m = re.exec(body)) && pieces.join(' ').length < 4000) {
-    const t = decodeEntities(m[2].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
-    if (t.length >= 30 && !/cookie|javascript|subscribe|sign in|log in|©/i.test(t) && !pieces.includes(t)) pieces.push(t);
+  let totalLen = 0;
+
+  let skipDepth = 0;
+  let rawSkipTag = null; // e.g. 'script' | 'style' | 'noscript'
+  let blockDepth = 0;
+  let buf = '';
+
+  const flush = () => {
+    if (!buf) return;
+    const t = decodeEntities(buf).replace(/[<>]/g, ' ').replace(/\s+/g, ' ').trim();
+    buf = '';
+    if (t.length >= 30 && !BOILERPLATE_RE.test(t) && !pieces.includes(t)) {
+      pieces.push(t);
+      totalLen += t.length + 1;
+    }
+  };
+
+  let i = 0;
+  let steps = 0;
+  const maxSteps = Math.min(n * 2 + 1024, 5_000_000);
+  while (i < n && totalLen < maxLen && steps++ < maxSteps) {
+    const prevI = i;
+    // Inside raw-text container (<script>, <style>, <noscript>): scan strictly for matching </tag
+    if (rawSkipTag) {
+      const lt = src.indexOf('<', i);
+      if (lt === -1) break;
+      if (src[lt + 1] === '/') {
+        let j = lt + 2;
+        while (j < n && /[a-zA-Z0-9-]/.test(src[j])) j++;
+        const closeName = src.slice(lt + 2, j).toLowerCase();
+        if (closeName === rawSkipTag) {
+          const gt = src.indexOf('>', j);
+          if (gt === -1) break;
+          rawSkipTag = null;
+          if (skipDepth > 0) skipDepth--;
+          i = gt + 1;
+          continue;
+        }
+      }
+      i = lt + 1;
+      continue;
+    }
+
+    const ch = src[i];
+    if (ch === '<') {
+      // HTML comment: <!-- ... -->
+      if (src.startsWith('<!--', i)) {
+        const end = src.indexOf('-->', i + 4);
+        if (end === -1) break;
+        i = end + 3;
+        continue;
+      }
+
+      // Find end of tag (respecting quoted attribute values)
+      let j = i + 1;
+      let quote = '';
+      while (j < n) {
+        const c = src[j];
+        if (quote) {
+          if (c === quote) quote = '';
+        } else if (c === '"' || c === "'") {
+          quote = c;
+        } else if (c === '>') {
+          break;
+        }
+        j++;
+      }
+      if (j >= n) break; // unclosed tag tail: drop safely
+
+      const inner = src.slice(i + 1, j).trim();
+      i = j + 1;
+      if (!inner || inner[0] === '!' || inner[0] === '?') continue;
+
+      const isClose = inner[0] === '/';
+      const isSelfClose = !isClose && inner.endsWith('/');
+      let nameStart = isClose ? 1 : 0;
+      while (nameStart < inner.length && /\s/.test(inner[nameStart])) nameStart++;
+      let nameEnd = nameStart;
+      while (nameEnd < inner.length && /[a-zA-Z0-9-]/.test(inner[nameEnd])) nameEnd++;
+      const tag = inner.slice(nameStart, nameEnd).toLowerCase();
+      if (!tag) continue;
+
+      if (SKIP_CONTAINERS.has(tag)) {
+        if (!isClose && !isSelfClose) {
+          skipDepth++;
+          if (RAW_TEXT_CONTAINERS.has(tag)) rawSkipTag = tag;
+        } else if (isClose && skipDepth > 0) {
+          skipDepth--;
+        }
+        continue;
+      }
+
+      if (skipDepth === 0 && EXTRACT_BLOCKS.has(tag)) {
+        if (!isClose && !isSelfClose) {
+          if (blockDepth > 0) flush();
+          blockDepth++;
+        } else if (isClose && blockDepth > 0) {
+          flush();
+          blockDepth--;
+        }
+      } else if (skipDepth === 0 && blockDepth > 0) {
+        buf += ' ';
+      }
+      continue;
+    }
+
+    if (skipDepth === 0 && blockDepth > 0) {
+      const nextLt = src.indexOf('<', i);
+      const end = nextLt === -1 ? n : nextLt;
+      buf += src.slice(i, end);
+      i = end;
+    } else {
+      const nextLt = src.indexOf('<', i + 1);
+      i = nextLt === -1 ? n : nextLt;
+    }
+    if (i <= prevI) i = prevI + 1;
   }
-  return pieces.join('\n').slice(0, 4000);
+
+  flush();
+  return pieces.join('\n').slice(0, maxLen);
 }
 
 async function getPage(href) {
