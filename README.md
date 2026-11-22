@@ -5,9 +5,9 @@ Play real business history as **seasons of four episodes, each made of two or mo
 
 No accounts. No tracking. Your progress stays on your devices.
 
-**Version 1.7.0** · Windows · macOS · Linux · Android · iPhone/iPad · Web
+**Version 1.7.3** · Windows · macOS · Linux · Android · iPhone/iPad · Web
 
-### New in 1.7.0
+### New in 1.7.3
 
 - **15 interface languages plus English (UK)**: English (US), English (UK), বাংলা, Español, Português (Brasil), Français, العربية, हिन्दी, 简体中文, 日本語, Deutsch, Русский, Bahasa Indonesia, Türkçe, 한국어, اردو. Choose in Settings → Language; switching is instant and never touches your progress. Right-to-left layout for Arabic and Urdu.
 - AI-written seasons (live research, chat builder) are written in your language.
