@@ -8,9 +8,9 @@ Play real business history as **seasons of four episodes, each made of two or mo
 
 No accounts. No tracking. Your progress stays on your devices.
 
-**Version 1.7.3** · Windows · macOS · Linux · Android · iPhone/iPad · Web
+**Version 1.7.4** · Windows · macOS · Linux · Android · iPhone/iPad · Web
 
-### New in 1.7.3
+### New in 1.7.4
 
 - **15 interface languages plus English (UK)**: English (US), English (UK), বাংলা, Español, Português (Brasil), Français, العربية, हिन्दी, 简体中文, 日本語, Deutsch, Русский, Bahasa Indonesia, Türkçe, 한국어, اردو. Choose in Settings → Language; switching is instant and never touches your progress. Right-to-left layout for Arabic and Urdu.
 - AI-written seasons (live research, chat builder) are written in your language.
@@ -43,16 +43,18 @@ Full notes: [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
 
 ## Download
 
-| Platform | File | Notes |
-|---|---|---|
-| **Windows 10/11** | [BIZSIM-Setup-1.7.3-windows-x64.exe](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-Setup-1.7.3-windows-x64.exe) | Unsigned: on the blue SmartScreen box click *More info → Run anyway*. The installer asks **just for me / all users** and lets you **choose the install folder**. Allow the firewall prompt only if you want phone access. |
-| **macOS (Apple Silicon M1–M4)** | [BIZSIM-1.7.3-mac-arm64.zip](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.zip) | Unzip and put `BIZSIM.app` **in any folder you like** (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged, run `xattr -cr /path/to/BIZSIM.app` once in Terminal. Also available as [.dmg](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.dmg) and [.pkg](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.pkg). |
-| **macOS (Intel)** | [BIZSIM-1.7.3-mac-x64.zip](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.zip) | Same as above. The GitHub Actions build also makes [.dmg](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.dmg) (drag anywhere) and [.pkg](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.pkg) (installer with *Change Install Location*). |
-| **Linux** | [BIZSIM-1.7.3-linux-x86_64.AppImage](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-linux-x86_64.AppImage) or [BIZSIM-1.7.3-linux-x64.tar.gz](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-linux-x64.tar.gz) | AppImage: put it in any folder, `chmod +x`, run. `.tar.gz`: extract anywhere and run `./bizsim`. |
-| **Android 6+** | [BIZSIM-v1.7.3-android.apk](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-android.apk) | Open the file and allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps your progress. |
-| **iPhone / iPad** | [BIZSIM-v1.7.3-ios-unsigned.ipa](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) · Xcode project included (`ios/`), or GitHub Actions | Apple only lets apps be compiled on a Mac. **On a Mac:** `npm install && npm run build && npx cap sync ios`, open `ios/App/App.xcodeproj`, pick your Apple ID under *Signing & Capabilities*, plug in the iPhone and press ▶ (free Apple ID: app lasts 7 days; paid developer account: TestFlight/App Store). **No Mac:** download the unsigned [.ipa](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) to install with Sideloadly/AltStore. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
+Get installers and checksums from the **[v1.7.4 release page](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4)** (Assets list on that page).
 
-All assets and checksums: [v1.7.3 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.3) · [SHA256SUMS.txt](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/SHA256SUMS.txt).
+| Platform | Get files from | Notes |
+|---|---|---|
+| **Windows 10/11** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | Windows Setup `.exe` in Assets. Unsigned: on the blue SmartScreen box click *More info → Run anyway*. Choose *just for me / all users* and the install folder. Allow the firewall prompt only if you want phone access. |
+| **macOS (Apple Silicon M1–M4)** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | `.zip` / `.dmg` / `.pkg` in Assets. Unzip and put `BIZSIM.app` anywhere (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged: `xattr -cr /path/to/BIZSIM.app`. |
+| **macOS (Intel)** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | Same as Apple Silicon; use the Intel (`x64`) builds from Assets. |
+| **Linux** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | AppImage or `.tar.gz` in Assets. AppImage: `chmod +x` then run. `.tar.gz`: extract and run `./bizsim`. |
+| **Android 6+** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | `.apk` in Assets. Allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps progress. |
+| **iPhone / iPad** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) · Xcode project in repo (`ios/`) | Unsigned `.ipa` in Assets (Sideloadly/AltStore), or build with Xcode on a Mac. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
+
+All platforms, checksums (`SHA256SUMS.txt`), and source archives: **[Releases · v1.7.4](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4)**.
 
 ## Setup instructions (desktop env file)
 
@@ -83,7 +85,7 @@ npm run mobile:ios
 npx cap open ios                             # macOS + Xcode
 ```
 
-**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS [.ipa](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) on free runners, push a tag such as `v1.7.3` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
+**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS [.ipa](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) on free runners, push a tag such as `v1.7.4` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
 
 **Public website production checklist** (see [docs/SECURITY.md](docs/SECURITY.md) for full details):
 
@@ -95,14 +97,14 @@ npx cap open ios                             # macOS + Xcode
 
 ## Data folder (desktop)
 
-- **Storage locations** → *Data folder* → *Change…*. BIZSIM copies your progress, saved seasons, keys and voice cache to the new folder and restarts. *Use default folder* moves it back. Defaults: `%APPDATA%\bizsim` (Windows), `~/Library/Application Support/bizsim` (macOS), `~/.config/bizsim` (Linux).
+- **Storage locations** → *Data folder* → *Change…*. BIZSIM copies your progress, saved seasons, keys and voice cache to the new folder and restarts. *Use default folder* moves it back. Defaults: `%APPDATA%\\bizsim` (Windows), `~/Library/Application Support/bizsim` (macOS), `~/.config/bizsim` (Linux).
 - **Downloads** (images, exported files), *Ask where to save each file*, or *Always save to a folder I choose*.
 
 ## AI keys
 
 **Easiest:** open **Settings → AI keys**, paste a key, press **Add key**. Free options: Google Gemini (<https://aistudio.google.com/apikey>, text and images), NVIDIA NIM (<https://build.nvidia.com/settings/api-keys>, keys start with `nvapi-`) and Groq (<https://console.groq.com/keys>). Add several and BIZSIM falls back between them automatically; the default order is Anthropic, OpenAI, Gemini, NVIDIA, Groq, xAI, OpenRouter, custom, and you can reorder it. For US-company financials, enter your name and email under *SEC EDGAR* (the SEC requires it; no key).
 
-**Alternative (files):** copy `.env.example` to `.env` (server) or to `bizsim.env` in the app data folder (the default one, or the folder you chose in Settings), `~/.config/bizsim/` (Linux), `~/Library/Application Support/bizsim/` (macOS), `%APPDATA%\bizsim\` (Windows). Priority: keys from the device → keys saved in Settings → settings file.
+**Alternative (files):** copy `.env.example` to `.env` (server) or to `bizsim.env` in the app data folder (the default one, or the folder you chose in Settings), `~/.config/bizsim/` (Linux), `~/Library/Application Support/bizsim/` (macOS), `%APPDATA%\\bizsim\\` (Windows). Priority: keys from the device → keys saved in Settings → settings file.
 
 ## Architecture (short)
 
