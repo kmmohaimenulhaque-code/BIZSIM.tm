@@ -917,7 +917,9 @@
       "weeklyTitle": "你在 BIZSIM 的一周",
       "weeklyDone_other": "目标达成：本周完成 {{count}} 季。",
       "weeklyProgress": "本周完成 {{done}}/{{goal}} 季。再玩一集就能保持习惯。",
-      "customTitle": "BIZSIM 提醒"
+      "customTitle": "BIZSIM 提醒",
+      "updateTitle": "更新到版本 {{version}}",
+      "updateBody": "BIZSIM {{version}} 已发布（当前版本 {{currentVersion}}）。"
     },
     "seasonDoneTitle": "本季已完成",
     "seasonDoneBody": "你完成了《{{title}}》。在学习档案中看看你的决策表现如何。",
@@ -946,6 +948,10 @@
       "custom": {
         "label": "你的提醒",
         "help": "你自己设置的提醒。"
+      },
+      "appUpdate": {
+        "label": "应用更新",
+        "help": "当有新版本 BIZSIM 可用时每日提醒。"
       }
     },
     "page": {

@@ -927,7 +927,9 @@
       "weeklyDone_one": "Goal reached: {{count}} season this week.",
       "weeklyDone_other": "Goal reached: {{count}} seasons this week.",
       "weeklyProgress": "{{done}} of {{goal}} seasons this week. One more episode keeps the habit going.",
-      "customTitle": "BIZSIM reminder"
+      "customTitle": "BIZSIM reminder",
+      "updateTitle": "Update to version {{version}}",
+      "updateBody": "BIZSIM {{version}} is available (you are on {{currentVersion}})."
     },
     "seasonDoneTitle": "Season completed",
     "seasonDoneBody": "You finished “{{title}}”. See how your calls compare in your learning profile.",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "Your reminders",
         "help": "Reminders you set yourself."
+      },
+      "appUpdate": {
+        "label": "App updates",
+        "help": "Daily reminder when a newer version of BIZSIM is available."
       }
     },
     "page": {

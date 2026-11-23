@@ -14,6 +14,7 @@ import { contentLangOf } from '../lib/caseLocale.js';
 import { difficultyLabel, domainLabel, relTime } from '../lib/format.js';
 import { TrustBadges } from '../components/trust.jsx';
 import { BookmarkButton } from '../components/Collections.jsx';
+import { HomeUpdateBar } from '../components/Updates.jsx';
 import { caseOfDay, localDateKey } from '@shared/caseOfDay.js';
 import { isAiGenerated } from '@shared/contentClass.js';
 
@@ -273,6 +274,8 @@ export default function Dashboard() {
           </Link>
         </div>
       </section>
+
+      <HomeUpdateBar />
 
       <div className="grid-12 mt-5">
         <div className="span-8 stack gap-5">

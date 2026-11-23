@@ -2,6 +2,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('bizsimDesktop', {
+  platform: process.platform,
+  arch: process.arch,
   getPaths: () => ipcRenderer.invoke('bizsim:get-paths'),
   chooseDownloadFolder: () => ipcRenderer.invoke('bizsim:choose-download-folder'),
   resetDownloadFolder: () => ipcRenderer.invoke('bizsim:reset-download-folder'),

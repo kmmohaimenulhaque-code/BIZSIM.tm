@@ -17,6 +17,11 @@ const CURATED_IDS = CASES.map((c) => c.id);
 const TITLE = Object.fromEntries(CASES.map((c) => [c.id, c.title]));
 const MAX_NATIVE = 48; // iOS keeps at most 64 pending local notifications
 
+let updateProvider = null;
+export function registerUpdateProvider(fn) {
+  updateProvider = typeof fn === 'function' ? fn : null;
+}
+
 export const notifySettings = (s = getState()) => ({ ...DEFAULT_SETTINGS, ...(s.notify || {}), categories: { ...DEFAULT_SETTINGS.categories, ...(s.notify?.categories || {}) } });
 export const useNotifySettings = () => useStore((s) => s.notify);
 export const useInbox = () => useStore((s) => s.inbox || []);
@@ -110,7 +115,8 @@ function context(now = new Date()) {
     .filter(Boolean);
   const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
   const completedThisWeek = (s.runs || []).filter((r) => r.finishedAt && new Date(r.finishedAt) >= monday).length;
-  return { now, curatedIds: CURATED_IDS, titleOf: (id) => TITLE[id] || t('notify.newSeason'), unfinished, completedThisWeek, t: (key, vars) => t(key, vars) };
+  const pendingUpdate = updateProvider ? updateProvider() : null;
+  return { now, curatedIds: CURATED_IDS, titleOf: (id) => TITLE[id] || t('notify.newSeason'), unfinished, completedThisWeek, pendingUpdate, t: (key, vars) => t(key, vars) };
 }
 
 /** Move planned notifications whose time has passed into the inbox (catch-up after the app was closed). */

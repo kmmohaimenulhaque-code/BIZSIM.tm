@@ -937,7 +937,9 @@
       "weeklyDone_one": "Meta atingida: {{count}} temporada nesta semana.",
       "weeklyDone_other": "Meta atingida: {{count}} temporadas nesta semana.",
       "weeklyProgress": "{{done}} de {{goal}} temporadas nesta semana. Mais um episódio mantém o hábito.",
-      "customTitle": "Lembrete do BIZSIM"
+      "customTitle": "Lembrete do BIZSIM",
+      "updateTitle": "Atualizar para a versão {{version}}",
+      "updateBody": "BIZSIM {{version}} está disponível (você está na {{currentVersion}})."
     },
     "seasonDoneTitle": "Temporada concluída",
     "seasonDoneBody": "Você concluiu “{{title}}”. Veja como suas escolhas se comparam no seu perfil de aprendizado.",
@@ -966,6 +968,10 @@
       "custom": {
         "label": "Seus lembretes",
         "help": "Lembretes que você mesmo define."
+      },
+      "appUpdate": {
+        "label": "Atualizações do app",
+        "help": "Lembrete diário quando uma nova versão do BIZSIM estiver disponível."
       }
     },
     "page": {

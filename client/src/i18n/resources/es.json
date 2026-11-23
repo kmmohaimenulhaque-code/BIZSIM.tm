@@ -937,7 +937,9 @@
       "weeklyDone_one": "Meta cumplida: {{count}} temporada esta semana.",
       "weeklyDone_other": "Meta cumplida: {{count}} temporadas esta semana.",
       "weeklyProgress": "{{done}} de {{goal}} temporadas esta semana. Un episodio más mantiene el hábito.",
-      "customTitle": "Recordatorio de BIZSIM"
+      "customTitle": "Recordatorio de BIZSIM",
+      "updateTitle": "Actualizar a la versión {{version}}",
+      "updateBody": "BIZSIM {{version}} está disponible (tienes {{currentVersion}})."
     },
     "seasonDoneTitle": "Temporada completada",
     "seasonDoneBody": "Terminaste «{{title}}». Mira cómo se comparan tus decisiones en tu perfil de aprendizaje.",
@@ -966,6 +968,10 @@
       "custom": {
         "label": "Tus recordatorios",
         "help": "Recordatorios que configuras tú."
+      },
+      "appUpdate": {
+        "label": "Actualizaciones de la app",
+        "help": "Recordatorio diario cuando hay una nueva versión de BIZSIM."
       }
     },
     "page": {

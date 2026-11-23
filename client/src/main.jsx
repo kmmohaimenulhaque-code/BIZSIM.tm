@@ -11,6 +11,7 @@ import { refreshStatus } from './lib/useStatus.js';
 import { toast } from './components/ui.jsx';
 import { initNative } from './lib/native.js';
 import { initNotifications } from './lib/notify.js';
+import { initUpdater } from './lib/updater.js';
 import { initI18n, t } from './i18n/index.js';
 
 // Language first, so the first screen is already in the user's language.
@@ -33,6 +34,7 @@ if (/[#&]pair=/.test(location.hash)) {
 
 initNative();
 initNotifications().catch(() => {});
+initUpdater();
 
 ready.finally(() =>
   createRoot(document.getElementById('root')).render(

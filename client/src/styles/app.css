@@ -3004,3 +3004,64 @@ a.collection-title:hover {
   margin-inline-end: 4px;
   vertical-align: -1px;
 }
+
+/* ============ Universal Updates ============ */
+.update-toast {
+  position: fixed;
+  inset-inline-end: var(--s5);
+  bottom: var(--s5);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  width: min(420px, calc(100vw - 32px));
+  border-radius: var(--r-md);
+  background: var(--glass-strong);
+  border: 1px solid var(--accent-line, var(--glass-border));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-float);
+  font-size: var(--t-13);
+  animation: pop-in var(--d-base) var(--ease) both;
+}
+.update-toast-icon,
+.update-accent-icon {
+  color: var(--accent);
+  flex: none;
+}
+.update-toast-title {
+  font-weight: 600;
+  color: var(--text-1);
+}
+.update-home-bar {
+  padding: var(--s4) var(--s5);
+  border-color: var(--accent-line, var(--border));
+}
+.update-home-strip {
+  padding: var(--s2) var(--s1);
+  align-items: center;
+}
+.update-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  flex: none;
+}
+.update-dot-badge {
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+@media (max-width: 860px) {
+  .update-toast {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    inset-inline-end: var(--s4);
+  }
+}

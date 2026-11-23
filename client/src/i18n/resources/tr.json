@@ -927,7 +927,9 @@
       "weeklyDone_one": "Hedefe ulaşıldı: bu hafta {{count}} sezon.",
       "weeklyDone_other": "Hedefe ulaşıldı: bu hafta {{count}} sezon.",
       "weeklyProgress": "Bu hafta {{goal}} sezondan {{done}} tanesi. Bir bölüm daha alışkanlığı sürdürür.",
-      "customTitle": "BIZSIM hatırlatıcısı"
+      "customTitle": "BIZSIM hatırlatıcısı",
+      "updateTitle": "{{version}} sürümüne güncelle",
+      "updateBody": "BIZSIM {{version}} hazır (mevcut sürüm: {{currentVersion}})."
     },
     "seasonDoneTitle": "Sezon tamamlandı",
     "seasonDoneBody": "“{{title}}” sezonunu bitirdiniz. Kararlarınızın nasıl kıyaslandığını öğrenme profilinizde görün.",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "Hatırlatıcılarınız",
         "help": "Kendi belirlediğiniz hatırlatıcılar."
+      },
+      "appUpdate": {
+        "label": "Uygulama güncellemeleri",
+        "help": "BIZSIM’in daha yeni bir sürümü çıktığında günlük hatırlatma."
       }
     },
     "page": {

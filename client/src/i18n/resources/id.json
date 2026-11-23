@@ -917,7 +917,9 @@
       "weeklyTitle": "Minggu Anda di BIZSIM",
       "weeklyDone_other": "Target tercapai: {{count}} musim minggu ini.",
       "weeklyProgress": "{{done}} dari {{goal}} musim minggu ini. Satu episode lagi menjaga kebiasaan.",
-      "customTitle": "Pengingat BIZSIM"
+      "customTitle": "Pengingat BIZSIM",
+      "updateTitle": "Perbarui ke versi {{version}}",
+      "updateBody": "BIZSIM {{version}} tersedia (Anda menggunakan {{currentVersion}})."
     },
     "seasonDoneTitle": "Musim selesai",
     "seasonDoneBody": "Anda menyelesaikan “{{title}}”. Lihat perbandingan keputusan Anda di profil belajar.",
@@ -946,6 +948,10 @@
       "custom": {
         "label": "Pengingat Anda",
         "help": "Pengingat yang Anda atur sendiri."
+      },
+      "appUpdate": {
+        "label": "Pembaruan aplikasi",
+        "help": "Pengingat harian saat versi BIZSIM yang lebih baru tersedia."
       }
     },
     "page": {

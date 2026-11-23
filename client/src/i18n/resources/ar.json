@@ -967,7 +967,9 @@
       "weeklyDone_zero": "تحقق الهدف: المواسم هذا الأسبوع: {{count}}.",
       "weeklyDone_other": "تحقق الهدف: المواسم هذا الأسبوع: {{count}}.",
       "weeklyProgress": "{{done}} من {{goal}} مواسم هذا الأسبوع. حلقة أخرى تحافظ على العادة.",
-      "customTitle": "تذكير من BIZSIM"
+      "customTitle": "تذكير من BIZSIM",
+      "updateTitle": "التحديث إلى الإصدار {{version}}",
+      "updateBody": "يتوفر BIZSIM {{version}} (أنت تستخدم {{currentVersion}})."
     },
     "seasonDoneTitle": "اكتمل الموسم",
     "seasonDoneBody": "أنهيت «{{title}}». اطّلع على مقارنة قراراتك في ملف التعلّم.",
@@ -996,6 +998,10 @@
       "custom": {
         "label": "تذكيراتك",
         "help": "تذكيرات تضبطها بنفسك."
+      },
+      "appUpdate": {
+        "label": "تحديثات التطبيق",
+        "help": "تذكير يومي عند توفر إصدار أحدث من BIZSIM."
       }
     },
     "page": {

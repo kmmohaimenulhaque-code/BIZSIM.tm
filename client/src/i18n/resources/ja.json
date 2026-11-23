@@ -917,7 +917,9 @@
       "weeklyTitle": "BIZSIM でのあなたの 1 週間",
       "weeklyDone_other": "目標達成：今週 {{count}} シーズン。",
       "weeklyProgress": "今週は {{goal}} シーズン中 {{done}} シーズン。あと 1 エピソードで習慣が続きます。",
-      "customTitle": "BIZSIM リマインダー"
+      "customTitle": "BIZSIM リマインダー",
+      "updateTitle": "バージョン {{version}} にアップデート",
+      "updateBody": "BIZSIM {{version}} が利用可能です（現在は {{currentVersion}}）。"
     },
     "seasonDoneTitle": "シーズン完了",
     "seasonDoneBody": "「{{title}}」を完了しました。学習プロフィールであなたの判断を比べてみましょう。",
@@ -946,6 +948,10 @@
       "custom": {
         "label": "あなたのリマインダー",
         "help": "自分で設定したリマインダー。"
+      },
+      "appUpdate": {
+        "label": "アプリのアップデート",
+        "help": "BIZSIMの新しいバージョンが公開されたときに毎日通知します。"
       }
     },
     "page": {

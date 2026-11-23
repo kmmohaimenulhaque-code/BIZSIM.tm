@@ -4,6 +4,8 @@ import {
   Home, FolderOpen, Search, Play, BarChart3, BookOpen, FileText, Building2, Clock, Settings, Info, Sun, Moon, Menu, X, Building, Bookmark, Bell,
 } from 'lucide-react';
 import { Logo, Toasts } from './ui.jsx';
+import { UpdateToast } from './Updates.jsx';
+import { useUpdateState } from '../lib/updater.js';
 import { StopVoiceOnNavigate } from './Listen.jsx';
 import { useStore, setTheme } from '../lib/store.js';
 import { CASES } from '@shared/cases/index.js';
@@ -55,20 +57,23 @@ const TITLES = {
   about: 'about',
 };
 
-function NavItem({ item, onClick }) {
+function NavItem({ item, onClick, hasDot = false }) {
   const { t } = useTranslation();
   const Icon = item.icon;
   const label = t(`navigation.${item.key}`);
   return (
     <NavLink to={item.to} end={item.end} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={onClick} title={label}>
       <Icon aria-hidden="true" strokeWidth={1.6} />
-      <span>{label}</span>
+      <span className="grow">{label}</span>
+      {hasDot && <i className="update-dot" aria-label="Update available" />}
     </NavLink>
   );
 }
 
 function Sidebar() {
   const { t } = useTranslation();
+  const upd = useUpdateState();
+  const hasUpdate = Boolean(upd.release?.updateAvailable && upd.skippedVersion !== upd.release.latestVersion);
   return (
     <aside className="sidebar" aria-label={t('navigation.primary')}>
       <Link to="/" className="brand" aria-label={t('navigation.home')}>
@@ -90,7 +95,7 @@ function Sidebar() {
       <div className="sidebar-foot">
         <div className="stack gap-1">
           {SYSTEM.map((i) => (
-            <NavItem key={i.to} item={i} />
+            <NavItem key={i.to} item={i} hasDot={i.key === 'settings' && hasUpdate} />
           ))}
         </div>
         <div className="local-badge" title={t('navigation.localBadgeHint')}>
@@ -258,6 +263,8 @@ function BellLink() {
 
 function Topbar({ theme }) {
   const { t } = useTranslation();
+  const upd = useUpdateState();
+  const hasUpdate = Boolean(upd.release?.updateAvailable && upd.skippedVersion !== upd.release.latestVersion);
   const loc = useLocation();
   const seg = loc.pathname.split('/')[1] || '';
   const isCase = seg === 'cases' && loc.pathname.split('/')[2];
@@ -294,8 +301,9 @@ function Topbar({ theme }) {
           {theme === 'dark' ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
         </button>
         <span className="vr desktop-only" aria-hidden="true" />
-        <Link to="/settings" className="btn btn-ghost btn-icon desktop-only" aria-label={t('navigation.settings')} title={t('navigation.settings')}>
+        <Link to="/settings" className="btn btn-ghost btn-icon desktop-only bell-link" aria-label={t('navigation.settings')} title={hasUpdate ? `Update to version ${upd.release.latestVersion}` : t('navigation.settings')}>
           <Settings aria-hidden="true" />
+          {hasUpdate && <span className="update-dot-badge" aria-hidden="true" />}
         </Link>
       </div>
     </header>
@@ -379,6 +387,7 @@ export default function Shell({ children }) {
         </main>
       </div>
       <MobileNav />
+      <UpdateToast />
       <Toasts />
       <StopVoiceOnNavigate />
     </div>

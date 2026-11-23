@@ -12,7 +12,7 @@ import { startJob, getJob, streamJob } from './jobs.js';
 import { searchImages, generateImage, imageGenerationEnabled } from './images/index.js';
 import { llmEnabled } from './ai/llm.js';
 import { currentGeminiModel } from './ai/geminiModels.js';
-import { rateLimiter, redactSecrets, redactSecretsDeep } from './lib/http.js';
+import { fetchJson, rateLimiter, redactSecrets, redactSecretsDeep, ttlCache } from './lib/http.js';
 import { createConcurrencyLimiter, checkPublicAiToken } from './lib/netSafety.js';
 import { CASES } from '../../shared/cases/index.js';
 import { cleanLocale } from '../../shared/locales.js';
@@ -20,6 +20,7 @@ import { BOOKS, PRINCIPLES } from '../../shared/books.js';
 import { CATALOGUE } from '../../shared/catalogue.js';
 import { enableShare, disableShare, shareState, initPairingStore, revokeDevice, revokeAll, newPairingCode } from './share.js';
 import { open as openSealed } from '../../shared/sealed.js';
+import { DEFAULT_UPDATE_REPO, normalizeRelease } from '../../shared/updateCheck.js';
 
 const pkg = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
@@ -197,6 +198,40 @@ export function createApp({ clientDist = config.clientDist } = {}) {
       desktop: process.env.BIZSIM_DESKTOP === '1',
       stages: STAGES,
     });
+  });
+
+  // Universal release update checker (cached 30 min, SSRF-safe, zero tracking).
+  const updateCache = ttlCache(30 * 60_000, 4);
+  const updateLimit = rateLimiter({ windowMs: 60_000, max: 12 });
+  app.get('/api/update/check', updateLimit, async (req, res) => {
+    if (process.env.BIZSIM_DISABLE_UPDATE_CHECK === '1') {
+      return res.json({ ok: false, disabled: true, currentVersion: pkg.version });
+    }
+    const rawRepo = String(process.env.BIZSIM_UPDATE_REPO || DEFAULT_UPDATE_REPO).trim();
+    const repo = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(rawRepo) ? rawRepo : DEFAULT_UPDATE_REPO;
+    const cached = updateCache.get(repo);
+    if (cached) {
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      return res.json(cached);
+    }
+    try {
+      const raw = await fetchJson(`https://api.github.com/repos/${repo}/releases/latest`, {
+        timeout: 8000,
+        maxBytes: 512_000,
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      });
+      const norm = normalizeRelease(raw, pkg.version, 'web', repo);
+      if (!norm) return res.status(502).json({ ok: false, error: 'Invalid release metadata.' });
+      const payload = { ok: true, ...norm, checkedAt: new Date().toISOString() };
+      updateCache.set(repo, payload);
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      return res.json(payload);
+    } catch {
+      return res.status(502).json({ ok: false, offline: true, currentVersion: pkg.version, error: 'Could not reach GitHub Releases.' });
+    }
   });
 
   // Wi-Fi sharing controls, only from the computer itself (desktop app).
@@ -449,12 +484,14 @@ export function createApp({ clientDist = config.clientDist } = {}) {
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
-  // Serve the built client (single-page app).
-  if (fs.existsSync(path.join(clientDist, 'index.html'))) {
+  // Serve the built client (single-page app) from memory with rate limiting (CodeQL clean).
+  const indexFile = path.join(clientDist, 'index.html');
+  if (fs.existsSync(indexFile)) {
+    const indexHtml = fs.readFileSync(indexFile, 'utf8');
     app.use(express.static(clientDist, { index: false, maxAge: '1h', dotfiles: 'deny' }));
-    const spaLimit = rateLimiter({ windowMs: 60_000, max: 120 });
-    const indexHtml = fs.readFileSync(path.join(clientDist, 'index.html'));
-    app.get('*', spaLimit, (req, res) => res.type('html').send(indexHtml));
+    app.get('*', rateLimiter({ windowMs: 60_000, max: 120 }), (_req, res) => {
+      res.type('html').send(indexHtml);
+    });
   }
 
   // Final Express error handler: always redact secrets and never expose stack traces.

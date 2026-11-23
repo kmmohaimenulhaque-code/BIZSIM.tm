@@ -927,7 +927,9 @@
       "weeklyDone_one": "Ziel erreicht: {{count}} Staffel diese Woche.",
       "weeklyDone_other": "Ziel erreicht: {{count}} Staffeln diese Woche.",
       "weeklyProgress": "{{done}} von {{goal}} Staffeln diese Woche. Eine weitere Episode hält die Gewohnheit am Leben.",
-      "customTitle": "BIZSIM-Erinnerung"
+      "customTitle": "BIZSIM-Erinnerung",
+      "updateTitle": "Auf Version {{version}} aktualisieren",
+      "updateBody": "BIZSIM {{version}} ist verfügbar (installiert: {{currentVersion}})."
     },
     "seasonDoneTitle": "Staffel abgeschlossen",
     "seasonDoneBody": "Sie haben „{{title}}“ abgeschlossen. Sehen Sie in Ihrem Lernprofil, wie Ihre Entscheidungen abschneiden.",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "Ihre Erinnerungen",
         "help": "Erinnerungen, die Sie selbst festlegen."
+      },
+      "appUpdate": {
+        "label": "App-Updates",
+        "help": "Tägliche Erinnerung, wenn eine neuere Version von BIZSIM verfügbar ist."
       }
     },
     "page": {

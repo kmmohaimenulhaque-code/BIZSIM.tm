@@ -20,6 +20,8 @@ const EN = {
   'notify.plan.weeklyDone': (v) => `Goal reached: ${v.count} seasons this week.`,
   'notify.plan.weeklyProgress': (v) => `${v.done} of ${v.goal} seasons this week. One more episode keeps the habit going.`,
   'notify.plan.customTitle': () => 'BIZSIM reminder',
+  'notify.plan.updateTitle': (v) => `Update to version ${v.version}`,
+  'notify.plan.updateBody': (v) => `BIZSIM ${v.version} is available (you are on ${v.currentVersion}).`,
 };
 const english = (key, vars) => EN[key](vars || {});
 
@@ -30,11 +32,12 @@ export const CATEGORY = {
   seasonDone: { label: 'Season completed', help: 'A note in the notification centre when you finish a season.' },
   researchDone: { label: 'Research finished', help: 'Tells you when live research or the chat builder finishes in the background.' },
   custom: { label: 'Your reminders', help: 'Reminders you set yourself.' },
+  appUpdate: { label: 'App updates', help: 'Daily reminder when a newer version of BIZSIM is available.' },
 };
 
 export const DEFAULT_SETTINGS = {
   enabled: false,
-  categories: { caseOfDay: true, resume: true, weeklyGoal: true, seasonDone: true, researchDone: true, custom: true },
+  categories: { caseOfDay: true, resume: true, weeklyGoal: true, seasonDone: true, researchDone: true, custom: true, appUpdate: true },
   time: '09:00',
   frequency: 'daily',
   quietStart: '22:00',
@@ -138,6 +141,20 @@ export function planNotifications(settings, ctx) {
         if (r.days?.length && !r.days.includes(day.getDay())) continue;
         push({ key: `custom|${r.id}|${localDateKey(day)}`, category: 'custom', title: tr('notify.plan.customTitle'), body: r.text, at: at(day, r.time), link: '/' });
       }
+    }
+  }
+  if (s.categories.appUpdate && ctx.pendingUpdate?.version) {
+    for (let i = 0; i < Math.min(days, 7); i++) {
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const key = localDateKey(day);
+      push({
+        key: `update|${ctx.pendingUpdate.version}|${key}`,
+        category: 'appUpdate',
+        title: tr('notify.plan.updateTitle', { version: ctx.pendingUpdate.version }),
+        body: tr('notify.plan.updateBody', { version: ctx.pendingUpdate.version, currentVersion: ctx.pendingUpdate.currentVersion || '' }),
+        at: at(day, s.time),
+        link: '/settings',
+      });
     }
   }
   return out.sort((a, b) => a.at - b.at);

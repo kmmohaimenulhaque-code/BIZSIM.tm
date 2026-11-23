@@ -927,7 +927,9 @@
       "weeklyDone_one": "লক্ষ্য পূরণ: এই সপ্তাহে {{count}}টি সিজন।",
       "weeklyDone_other": "লক্ষ্য পূরণ: এই সপ্তাহে {{count}}টি সিজন।",
       "weeklyProgress": "এই সপ্তাহে {{goal}}টির মধ্যে {{done}}টি সিজন। আরেকটি পর্ব অভ্যাসটা ধরে রাখে।",
-      "customTitle": "BIZSIM রিমাইন্ডার"
+      "customTitle": "BIZSIM রিমাইন্ডার",
+      "updateTitle": "সংস্করণ {{version}}-এ আপডেট করুন",
+      "updateBody": "BIZSIM {{version}} পাওয়া যাচ্ছে (আপনার বর্তমান সংস্করণ {{currentVersion}})।"
     },
     "seasonDoneTitle": "সিজন সম্পূর্ণ",
     "seasonDoneBody": "আপনি “{{title}}” শেষ করেছেন। শেখার প্রোফাইলে দেখুন আপনার সিদ্ধান্তগুলো কেমন হয়েছে।",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "আপনার রিমাইন্ডার",
         "help": "যে রিমাইন্ডার আপনি নিজে সেট করেন।"
+      },
+      "appUpdate": {
+        "label": "অ্যাপ আপডেট",
+        "help": "BIZSIM-এর নতুন সংস্করণ এলে দৈনিক রিমাইন্ডার।"
       }
     },
     "page": {

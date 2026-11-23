@@ -927,7 +927,9 @@
       "weeklyDone_one": "लक्ष्य पूरा: इस हफ़्ते {{count}} सीज़न।",
       "weeklyDone_other": "लक्ष्य पूरा: इस हफ़्ते {{count}} सीज़न।",
       "weeklyProgress": "इस हफ़्ते {{goal}} में से {{done}} सीज़न। एक और एपिसोड आदत बनाए रखता है।",
-      "customTitle": "BIZSIM रिमाइंडर"
+      "customTitle": "BIZSIM रिमाइंडर",
+      "updateTitle": "संस्करण {{version}} पर अपडेट करें",
+      "updateBody": "BIZSIM {{version}} उपलब्ध है (आप {{currentVersion}} पर हैं)।"
     },
     "seasonDoneTitle": "सीज़न पूरा हुआ",
     "seasonDoneBody": "आपने “{{title}}” पूरा कर लिया। अपनी सीखने की प्रोफ़ाइल में देखें कि आपके निर्णय कैसे रहे।",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "आपके रिमाइंडर",
         "help": "रिमाइंडर जो आप खुद सेट करते हैं।"
+      },
+      "appUpdate": {
+        "label": "ऐप अपडेट",
+        "help": "BIZSIM का नया संस्करण उपलब्ध होने पर दैनिक रिमाइंडर।"
       }
     },
     "page": {

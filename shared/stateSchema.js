@@ -68,7 +68,7 @@ export function sanitizeNotifySettings(v) {
   const hhmm = (x, d) => (typeof x === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(x) ? x : d);
   return {
     enabled: n.enabled === true,
-    categories: Object.fromEntries(['caseOfDay', 'resume', 'weeklyGoal', 'seasonDone', 'researchDone', 'custom'].map((k) => [k, cats[k] !== false])),
+    categories: Object.fromEntries(['caseOfDay', 'resume', 'weeklyGoal', 'seasonDone', 'researchDone', 'custom', 'appUpdate'].map((k) => [k, cats[k] !== false])),
     time: hhmm(n.time, '09:00'),
     frequency: ['daily', 'weekdays', 'weekly'].includes(n.frequency) ? n.frequency : 'daily',
     quietStart: hhmm(n.quietStart, '22:00'),

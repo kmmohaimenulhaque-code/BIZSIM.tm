@@ -947,7 +947,9 @@
       "weeklyDone_one": "Цель достигнута: {{count}} сезон за неделю.",
       "weeklyDone_other": "Цель достигнута: {{count}} сезона за неделю.",
       "weeklyProgress": "Сезонов за неделю: {{done}} из {{goal}}. Ещё один эпизод поддержит привычку.",
-      "customTitle": "Напоминание BIZSIM"
+      "customTitle": "Напоминание BIZSIM",
+      "updateTitle": "Обновиться до версии {{version}}",
+      "updateBody": "Доступна версия BIZSIM {{version}} (у вас {{currentVersion}})."
     },
     "seasonDoneTitle": "Сезон завершён",
     "seasonDoneBody": "Вы завершили «{{title}}». Посмотрите, как ваши решения выглядят в профиле обучения.",
@@ -976,6 +978,10 @@
       "custom": {
         "label": "Ваши напоминания",
         "help": "Напоминания, которые вы задаёте сами."
+      },
+      "appUpdate": {
+        "label": "Обновления приложения",
+        "help": "Ежедневное напоминание о выходе новой версии BIZSIM."
       }
     },
     "page": {

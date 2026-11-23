@@ -23,6 +23,7 @@ import { useTranslation, Trans, t as tr } from '../i18n/index.js';
 import { formatInteger, formatDecimal, formatPercent, formatDateTime, formatList } from '../i18n/format.js';
 import { LANGUAGE_COUNT } from '@shared/locales.js';
 import { LanguagePanel } from '../components/Language.jsx';
+import { UpdatesPanel } from '../components/Updates.jsx';
 import { contentLangOf } from '../lib/caseLocale.js';
 
 
@@ -586,6 +587,12 @@ function RestorePreview({ preview, onClose }) {
 
 export function SettingsPage() {
   const { t } = useTranslation();
+  const loc = useLocation();
+  useEffect(() => {
+    if (loc.hash === '#updates') {
+      document.getElementById('updates')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [loc.hash]);
   const theme = useStore((s) => s.theme);
   const status = useStatus();
   const [server, setServer] = useState(apiBase());
@@ -613,6 +620,8 @@ export function SettingsPage() {
     <div className="stack gap-6" style={{ maxWidth: 860 }}>
       <PageHead eyebrow={t('settings.eyebrow')} title={t('settings.title')} />
       <LanguagePanel />
+
+      <UpdatesPanel />
 
       <section className="panel panel-pad stack gap-4" aria-labelledby="ap-h">
         <h2 id="ap-h" className="section-title">

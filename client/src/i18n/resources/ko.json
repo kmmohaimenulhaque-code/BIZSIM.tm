@@ -917,7 +917,9 @@
       "weeklyTitle": "BIZSIM에서 보낸 한 주",
       "weeklyDone_other": "목표 달성: 이번 주 시즌 {{count}}개.",
       "weeklyProgress": "이번 주 시즌 {{goal}}개 중 {{done}}개. 에피소드 하나만 더 하면 습관이 이어집니다.",
-      "customTitle": "BIZSIM 알림"
+      "customTitle": "BIZSIM 알림",
+      "updateTitle": "버전 {{version}}(으)로 업데이트",
+      "updateBody": "BIZSIM {{version}}을(를) 사용할 수 있습니다(현재 {{currentVersion}})."
     },
     "seasonDoneTitle": "시즌 완료",
     "seasonDoneBody": "“{{title}}”을(를) 끝냈습니다. 학습 프로필에서 나의 판단을 비교해 보세요.",
@@ -946,6 +948,10 @@
       "custom": {
         "label": "내 알림",
         "help": "직접 설정한 알림."
+      },
+      "appUpdate": {
+        "label": "앱 업데이트",
+        "help": "BIZSIM 새 버전이 출시되면 매일 알림을 보냅니다."
       }
     },
     "page": {

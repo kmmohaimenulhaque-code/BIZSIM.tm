@@ -937,7 +937,9 @@
       "weeklyDone_one": "Objectif atteint : {{count}} saison cette semaine.",
       "weeklyDone_other": "Objectif atteint : {{count}} saisons cette semaine.",
       "weeklyProgress": "{{done}} saisons sur {{goal}} cette semaine. Un épisode de plus entretient l’habitude.",
-      "customTitle": "Rappel BIZSIM"
+      "customTitle": "Rappel BIZSIM",
+      "updateTitle": "Mettre à jour vers la version {{version}}",
+      "updateBody": "BIZSIM {{version}} est disponible (vous utilisez {{currentVersion}})."
     },
     "seasonDoneTitle": "Saison terminée",
     "seasonDoneBody": "Vous avez terminé « {{title}} ». Comparez vos choix dans votre profil d’apprentissage.",
@@ -966,6 +968,10 @@
       "custom": {
         "label": "Vos rappels",
         "help": "Les rappels que vous définissez vous-même."
+      },
+      "appUpdate": {
+        "label": "Mises à jour de l’application",
+        "help": "Rappel quotidien lorsqu’une nouvelle version de BIZSIM est disponible."
       }
     },
     "page": {

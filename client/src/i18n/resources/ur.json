@@ -927,7 +927,9 @@
       "weeklyDone_one": "ہدف پورا: اس ہفتے {{count}} سیزن۔",
       "weeklyDone_other": "ہدف پورا: اس ہفتے {{count}} سیزن۔",
       "weeklyProgress": "اس ہفتے {{goal}} میں سے {{done}} سیزن۔ ایک اور قسط عادت کو قائم رکھتی ہے۔",
-      "customTitle": "BIZSIM یاد دہانی"
+      "customTitle": "BIZSIM یاد دہانی",
+      "updateTitle": "ورژن {{version}} پر اپ ڈیٹ کریں",
+      "updateBody": "BIZSIM {{version}} دستیاب ہے (آپ {{currentVersion}} استعمال کر رہے ہیں)۔"
     },
     "seasonDoneTitle": "سیزن مکمل",
     "seasonDoneBody": "آپ نے “{{title}}” مکمل کر لیا۔ اپنے سیکھنے کے پروفائل میں دیکھیں کہ آپ کے فیصلے کیسے رہے۔",
@@ -956,6 +958,10 @@
       "custom": {
         "label": "آپ کی یاد دہانیاں",
         "help": "وہ یاد دہانیاں جو آپ خود طے کریں۔"
+      },
+      "appUpdate": {
+        "label": "ایپ اپ ڈیٹس",
+        "help": "BIZSIM کا نیا ورژن دستیاب ہونے پر روزانہ یاد دہانی۔"
       }
     },
     "page": {
