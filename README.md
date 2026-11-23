@@ -3,7 +3,7 @@
 **Open-source business case simulation and strategic decision-making.**
 Play real business history as **seasons of four episodes, each made of two or more linked decisions with its own outcome and insight**, from Hammurabi’s Babylon to OpenAI’s boardroom, and see what actually happened, with cited sources. Research any live company from public sources and turn the evidence into a playable season whose last episode is happening now, or describe the season you want in plain language and let the chat builder write it.
 
-<img width="100%" alt="BIZSIM Overview" src="Screenshots/BIZSIM home.png" />
+&lt;img width=&quot;100%&quot; alt=&quot;BIZSIM Overview&quot; src=&quot;Screenshots/BIZSIM home.png&quot; /&gt;
 *Workspace overview with daily featured case, quick research bar, and recent activity.*
 
 No accounts. No tracking. Your progress stays on your devices.
@@ -14,19 +14,19 @@ No accounts. No tracking. Your progress stays on your devices.
 
 - **15 interface languages plus English (UK)**: English (US), English (UK), বাংলা, Español, Português (Brasil), Français, العربية, हिन्दी, 简体中文, 日本語, Deutsch, Русский, Bahasa Indonesia, Türkçe, 한국어, اردو. Choose in Settings → Language; switching is instant and never touches your progress. Right-to-left layout for Arabic and Urdu.
 - AI-written seasons (live research, chat builder) are written in your language.
-- All translations are **machine-assisted and not yet reviewed** by native speakers. Built-in seasons are English, apart from a one-season sample in Bengali and Spanish. See [docs/I18N.md](docs/I18N.md).
+- All translations are **machine-assisted and not yet reviewed** by native speakers. Built-in seasons are English, apart from a one-season sample in Bengali and Spanish. See [docs/I18N.md](https://www.google.com/search?q=docs/I18N.md).
 
-Full notes: [docs/RELEASE-NOTES-1.7.md](docs/RELEASE-NOTES-1.7.md).
+Full notes: [docs/RELEASE-NOTES-1.7.md](https://www.google.com/search?q=docs/RELEASE-NOTES-1.7.md).
 
 ### New in 1.6.0
 
-- **Share a season or a single episode** as a `.bizsim` file or QR codes, including seasons from live research and the chat builder. Imports are checked, previewed and never overwrite anything without asking. See [docs/PACKAGE-FORMAT.md](docs/PACKAGE-FORMAT.md).
+- **Share a season or a single episode** as a `.bizsim` file or QR codes, including seasons from live research and the chat builder. Imports are checked, previewed and never overwrite anything without asking. See [docs/PACKAGE-FORMAT.md](https://www.google.com/search?q=docs/PACKAGE-FORMAT.md).
 - **Notifications, off until you turn them on**: Case of the Day, resume reminders, a weekly goal, season and research completion, your own reminders. Quiet hours, per-category switches, an inbox. Scheduled on the device, no account.
 - **Case of the Day**, **collections and bookmarks**, **replay and compare** attempts, a **PDF report** with your reflection, and the **homepage image back**.
 - **Trust labels**: every season shows whether it is documented history, a scriptural narrative, a live scenario or a counterfactual, whether AI wrote it, and the evidence status of each outcome after an automated check of all 358 cited sources.
-- **Security hardening**: new Wi-Fi pairing (one-time codes, signed requests, replay protection, device list), encrypted AI keys over Wi-Fi, protection against other websites, validated imports and backups, Electron 45. See [docs/SECURITY.md](docs/SECURITY.md).
+- **Security hardening**: new Wi-Fi pairing (one-time codes, signed requests, replay protection, device list), encrypted AI keys over Wi-Fi, protection against other websites, validated imports and backups, Electron 45. See [docs/SECURITY.md](https://www.google.com/search?q=docs/SECURITY.md).
 
-Full notes: [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
+Full notes: [docs/RELEASE-NOTES-1.6.md](https://www.google.com/search?q=docs/RELEASE-NOTES-1.6.md).
 
 ---
 
@@ -34,20 +34,16 @@ Full notes: [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
 
 | Area | What it does |
 |---|---|
-| **200 seasons · 800 episodes · 1,600 decisions** | Your 130-season curriculum (incl. bonus seasons 121–130: ByteDance/TikTok, ASML, Stripe, Spotify, Uber, Alibaba/Taobao, Shein, Patreon, Manhattan Project, Grameen Bank), 20 more from the BIZSIM team, and the **151–200 expansion**: faith-era statesmen and merchant networks (Umar ibn al-Khattab, the Quakers, Zheng He, the Karimi, Jamsetji Tata, Nizam al-Mulk, the Inca, Abd al-Rahman III, the Cistercians, Saladin, the Shanxi banks, Kilwa, Prophet Yusuf and Sulayman in scripture, Tipu Sultan, Mimar Sinan, G.D. Birla, the Sogdians, Queen Amina, Alhassan Dantata, Zubaydah, Ibn Khaldun, New Julfa, Said bin Sultan, Aceh, Rani Rashmoni, BRAC, Tabung Haji) and modern operators (M-Pesa, Emirates, Arm, BYD, MercadoLibre, Nubank, Novo Nordisk, Rolex, Aldi, Caterpillar, John Deere, 3M, Pokémon, Pixar, PlayStation, Steam, Instagram, WhatsApp, Zoom, Canva, Cloudflare, Suez and Panama). Six executive pillars: Strategy & Competition · Finance & Capital · Brand & Go-to-Market · Operations & Scale · Turnarounds & Crises · Leadership & Governance. Each season lists its four episodes, era, recommended reading and a verified Wikipedia source. See [docs/CATALOGUE.md](docs/CATALOGUE.md). |
-| **All 200 seasons built in** | Every season is written in advance and plays **offline, with no AI key**: four episodes of two linked decisions each, three options per decision, the historical choice revealed after every call, an **episode outcome and insight** after every episode, all cited to Wikipedia, and book-backed lessons. Ten signature seasons (Athens, Augustus, Medici Bank, VOC, Ford, Intel, Apple 1997, Kodak, Nokia, Netflix) have extra hand-written depth. Every season passes the same automatic checks (exactly four episodes of two to four decisions, one historical option per decision, every outcome cited, an insight per episode, no unknown principles, no spoilers before a decision). |
-| **6-step method** | Situation → Concept → Evidence → Episodes → Outcome → Insight. Decision text is written so it doesn’t give away what happened; your call is compared with history after each decision, and each episode closes with what actually happened and an insight. |
-| **Principles library (yours to extend)** | 76 principles from 30 books (*The 48 Laws of Power, Influence, The Prince, Good Strategy Bad Strategy, Competitive Strategy, Blue Ocean, The Innovator’s Dilemma, The Art of War, Good to Great, Psychology of Money, Principles, Zero to One, Secrets of the Millionaire Mind, Think and Grow Rich, The Millionaire Fastlane…*), paraphrased and attributed. **Add your own books and principles**, tag them, link them to any season, and **tag seasons and cases** yourself (every season page has *Your tags and principles*). Tags work in season search and filters, and travel with QR transfer. |
-| **Live company research: two modes** | **Research a company:** Wikidata → Wikipedia → SEC EDGAR (audited financials) → news → official website → optional AI **live season**: episodes I–III replay the company’s documented history, two or three decisions each with reveals, citations and an episode insight; episode IV holds the decisions it faces now, marked **Live**, no “right answer”, only AI analysis and hypothetical scenarios. Searching a product (e.g. a game) researches the company behind it. **Chat builder:** describe what you want (“two seasons comparing Emirates and Singapore Airlines”, “how the Medici financed the popes”) and BIZSIM plans the turning points, reads the matching Wikipedia articles, writes up to three seasons episode by episode, checks them with the same quality gates as the built-in ones and saves them to *My cases*. It also links your own principles when they fit. |
-| **Voice reader** | A **Listen** button on every case step and on AI analyses. Uses **Piper**, a free open-source (MIT) neural text-to-speech engine that runs on the device. Choose a male voice in Settings: John (default), Norman, Bryce or Joe, all trained on public-domain or CC0 recordings, so free for any use. A voice (~60 MB) downloads once, then works offline. |
-| **QR progress transfer** | Settings → *Send / Receive progress*: cycling QR codes move decisions, profile, saved companies, cases and your principles library between devices, offline, no account. Smaller, medium error-correction codes with pause and step controls, a multi-scale scanner that copes with glare and angles, and a list of codes still needed. Merges with what is already there and never overwrites it. Photos/screenshots or a paste-in code also work. |
-| **Use on your phone** | The desktop app can share itself over Wi‑Fi: scan its pairing QR with the phone app (or the phone camera) and the phone uses the computer’s live research and AI keys. Pairing uses one-time codes and signed requests; remove devices any time. See [docs/SECURITY.md](docs/SECURITY.md). |
-| **AI keys with automatic fallback** | Settings → *AI keys*: paste any key. BIZSIM recognises the provider, checks which models really answer and adds the key to an ordered **fallback chain**. Add as many keys as you like: case writing tries them top to bottom and, inside each key, its models in order, moving on automatically when a model is rate-limited, down, or returns broken JSON (which is repaired first when possible). Reorder, pause or remove keys any time. Supports Google Gemini (free tier), **NVIDIA NIM (free endpoint, nvapi- keys)**, Groq (free tier), Anthropic, OpenAI, OpenRouter, xAI, and any OpenAI-compatible endpoint including local Ollama. |
-| **Graphite & gold design** | A refined dark theme with glass panels, champagne-gold accents and the new BIZSIM monogram (light theme in ivory and antique gold). |
-| **Choose where things go (desktop)** | Pick the install folder in the Windows installer; Settings → *Storage locations* lets you move the data folder (progress, saved seasons, keys) anywhere and choose a fixed download folder or be asked every time. |
-| **Images** | Each season’s cover is the lead image of **its own Wikipedia article** (free licences only, credited with licence and author), so pictures always match the topic. Seasons whose article has no free image get a typographic cover. AI illustrations are available with a Gemini or OpenAI key (always labelled AI). |
+| **200 offline seasons** | **800 episodes · 1,600 decisions** across 6 executive pillars (Strategy, Finance, Brand, Operations, Turnarounds, Leadership) — spanning ancient statesmen, historic merchant networks, and modern operators, plus 10 hand-written signature seasons. Plays fully offline with no AI key. See [docs/CATALOGUE.md](https://www.google.com/search?q=docs/CATALOGUE.md). |
+| **6-step method** | **Situation → Concept → Evidence → Episodes → Outcome → Insight.** Spoiler-free decisions compared against history, with cited outcomes and takeaways after each episode. |
+| **Principles library** | 76 paraphrased principles from 30 classic strategy and business books. Add your own books, principles, and custom tags to link and filter seasons. |
+| **Live research & Chat builder** | **Research a company** from Wikidata, Wikipedia, SEC EDGAR, news, and official sites to generate a 4-episode season (with Episode IV set in the present). Or use **Chat builder** to describe any custom case in plain language. |
+| **AI key fallback chain** | Add keys from Gemini, NVIDIA NIM, Groq, Anthropic, OpenAI, OpenRouter, xAI, or local Ollama. Automatically tests models, repairs broken JSON, and falls back on rate limits or errors. |
+| **Voice reader** | Built-in offline neural TTS (**Listen** button) powered by open-source **Piper** with 4 CC0/public-domain voices (~60 MB one-time download). |
+| **QR transfer & Wi-Fi pairing** | Sync progress, cases, and principles offline via cycling QR codes (non-destructive merge), or pair your phone to the desktop app over local Wi-Fi with one-time codes and signed requests. See [docs/SECURITY.md](https://www.google.com/search?q=docs/SECURITY.md). |
+| **Design, media & storage** | Dark Graphite & Gold and light Ivory themes, CC-licensed Wikipedia cover images (or optional AI illustrations), and customizable desktop install/data/download folders. |
 
-Provenance is always visible: each season's kind of account (documented, scriptural, live, counterfactual), an **AI-written** label where it applies, and an evidence status on every outcome: **Verified against source** · **Source available, claim not independently verified** · **Reference inaccessible** · **Insufficient evidence**. The automated check shows whether a source states the same details; it does not prove the history.
+Provenance is always visible: account type (documented, scriptural, live, counterfactual), **AI-written** labels, and per-outcome evidence status (**Verified against source** · **Source available, claim not independently verified** · **Reference inaccessible** · **Insufficient evidence**).
 
 ---
 
@@ -55,12 +51,12 @@ Provenance is always visible: each season's kind of account (documented, scriptu
 
 | Platform | File | Notes |
 |---|---|---|
-| **Windows 10/11** | `BIZSIM-Setup-1.7.0-windows-x64.exe` | Unsigned: on the blue SmartScreen box click *More info → Run anyway*. The installer asks **just for me / all users** and lets you **choose the install folder**. Allow the firewall prompt only if you want phone access. |
-| **macOS (Apple Silicon M1–M4)** | `BIZSIM-1.7.0-mac-arm64.zip` | Unzip and put `BIZSIM.app` **in any folder you like** (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged, run `xattr -cr /path/to/BIZSIM.app` once in Terminal. |
-| **macOS (Intel)** | `BIZSIM-1.7.0-mac-x64.zip` | Same as above. The GitHub Actions build also makes `.dmg` (drag anywhere) and `.pkg` (installer with *Change Install Location*). |
-| **Linux** | `.AppImage` or `.tar.gz` | AppImage: put it in any folder, `chmod +x`, run. `.tar.gz`: extract anywhere and run `./bizsim`. |
-| **Android 6+** | `BIZSIM-1.7.0-android.apk` | Open the file and allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps your progress. |
-| **iPhone / iPad** | Xcode project included (`ios/`), or GitHub Actions | Apple only lets apps be compiled on a Mac. **On a Mac:** `npm install && npm run build && npx cap sync ios`, open `ios/App/App.xcodeproj`, pick your Apple ID under *Signing & Capabilities*, plug in the iPhone and press ▶ (free Apple ID: app lasts 7 days; paid developer account: TestFlight/App Store). **No Mac:** push to GitHub and the *ios* job builds an unsigned `.ipa` to install with Sideloadly/AltStore. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
+| **Windows 10/11** | [BIZSIM-Setup-1.7.3-windows-x64.exe](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-Setup-1.7.3-windows-x64.exe) | Unsigned: on the blue SmartScreen box click *More info → Run anyway*. The installer asks **just for me / all users** and lets you **choose the install folder**. Allow the firewall prompt only if you want phone access. |
+| **macOS (Apple Silicon M1–M4)** | [BIZSIM-1.7.3-mac-arm64.zip](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.zip) | Unzip and put `BIZSIM.app` **in any folder you like** (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged, run `xattr -cr /path/to/BIZSIM.app` once in Terminal. Also available as [.dmg](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.dmg) and [.pkg](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-arm64.pkg). |
+| **macOS (Intel)** | [BIZSIM-1.7.3-mac-x64.zip](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.zip) | Same as above. The GitHub Actions build also makes [.dmg](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.dmg) (drag anywhere) and [.pkg](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-mac-x64.pkg) (installer with *Change Install Location*). |
+| **Linux** | [BIZSIM-1.7.3-linux-x86\_64.AppImage](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-linux-x86_64.AppImage) or [BIZSIM-1.7.3-linux-x64.tar.gz](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-1.7.3-linux-x64.tar.gz) | AppImage: put it in any folder, `chmod +x`, run. `.tar.gz`: extract anywhere and run `./bizsim`. |
+| **Android 6+** | [BIZSIM-v1.7.3-android.apk](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-android.apk) | Open the file and allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps your progress. |
+| **iPhone / iPad** | [BIZSIM-v1.7.3-ios-unsigned.ipa](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) · Xcode project included (`ios/`), or GitHub Actions | Apple only lets apps be compiled on a Mac. **On a Mac:** `npm install && npm run build && npx cap sync ios`, open `ios/App/App.xcodeproj`, pick your Apple ID under *Signing & Capabilities*, plug in the iPhone and press ▶ (free Apple ID: app lasts 7 days; paid developer account: TestFlight/App Store). **No Mac:** download the unsigned [.ipa](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) to install with Sideloadly/AltStore. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
 
 **Desktop apps include the server**, so everything works out of the box. **Phone apps** run all 200 seasons, the principles library, voice and QR transfer on their own; for live research and the chat builder, pair with your computer (Settings → *Connect to a computer*) or point them at a hosted server (Settings → *Server address*).
 
@@ -117,7 +113,7 @@ npm run build && npx cap sync ios && node scripts/prepare-mobile.mjs
 npx cap open ios                             # macOS + Xcode
 ```
 
-**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS `.ipa` on free runners, push a tag such as `v1.7.0` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
+**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS [.ipa](https://www.google.com/search?q=https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.7.3/BIZSIM-v1.7.3-ios-unsigned.ipa) on free runners, push a tag such as `v1.7.3` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
 
 ### Hosting a server (Docker)
 
@@ -125,9 +121,10 @@ npx cap open ios                             # macOS + Xcode
 docker build -t bizsim .
 docker run -p 8787:8787 -e SEC_USER_AGENT="Your Name you@example.com" -e GEMINI_API_KEY=... -v bizsim-data:/data bizsim
 ```
+
 Set `BIZSIM_ADMIN_TOKEN` to allow saving server-wide keys from Settings remotely (send header `X-BizSim-Admin`).
 
-**Public website production checklist** (see [`docs/SECURITY.md`](docs/SECURITY.md) for full details):
+**Public website production checklist** (see [docs/SECURITY.md](https://www.google.com/search?q=docs/SECURITY.md) for full details):
 - Run behind an HTTPS reverse proxy (Nginx, Caddy, Cloudflare) with TLS and edge rate limits (required if running multiple instances; the built-in bounded limiter is single-process).
 - Set `CORS_ORIGINS=https://your-domain.example` explicitly (do not use `*` in production).
 - Supply AI keys server-side via environment variables (and optionally set `BIZSIM_PUBLIC_AI_TOKEN` to gate expensive AI routes); for personal BYOK and SEC EDGAR usage, users should download the official Desktop or Mobile apps rather than using a public web instance.
@@ -137,33 +134,34 @@ Set `BIZSIM_ADMIN_TOKEN` to allow saving server-wide keys from Settings remotely
 
 ## Architecture
 
-```
-shared/          Content and rules used by client and server
-  catalogue.js   200 seasons × 4 episodes × 2 decisions (pillar, era, summary, reading, Wikipedia source);
-                 catalogue2.js holds seasons 151-200
-  cases/         10 signature seasons + index of all 200
-  seasons/       the other 190 seasons in a compact format, compiled by compile.js
-  seasonImages.js  each season's Wikipedia cover image (scripts/build-images.mjs)
-  keychain.js    the AI key fallback chain (shared by server and phone)
-  books.js       30 books, 76 paraphrased principles
-  validate.js    Quality gates (sources, principles, ranges, spoilers)
-server/src/      Express API (no database)
-  research/      Wikidata, Wikipedia, SEC EDGAR, news, website; SSE pipeline
-  ai/            llm.js (key chain, fallbacks, JSON repair), geminiModels.js (auto model
-                 choice), keys.js (bring-your-own-key, NVIDIA NIM), caseSynth.js (live
-                 seasons), chatBuilder.js (natural language to seasons)
-  share.js       Wi-Fi pairing for phones
-client/src/      React + Vite app
-  lib/voice.js   Piper TTS voice reader
-  components/    Transfer.jsx (QR transfer + pairing), Keys.jsx (AI key chain),
-                 ChatBuilder.jsx, ErrorBoundary.jsx, Listen.jsx …
-  pages/Library.jsx  principles library with your own books, principles and tags
-electron/        Desktop shell (fixed local port so progress persists; preload.cjs exposes
-                 the data-folder and download-folder choices to Settings)
-mobile/          Android/iOS icons and splash; scripts/prepare-mobile.mjs applies them
+```mermaid
+flowchart TB
+    subgraph Apps["Apps & UI"]
+        Desktop["electron/ · Desktop Shell"]
+        Mobile["mobile/ · Android & iOS"]
+        Client["client/src/ · React + Vite UI, Piper TTS, QR Transfer"]
+        Desktop --> Client
+        Mobile --> Client
+    end
+
+    Shared["shared/ · 200 Seasons, 76 Principles, Validator, Keychain"]
+
+    subgraph Backend["server/src/ · Express API (No DB)"]
+        API["REST & SSE Endpoints"]
+        Research["research/ · Wikidata, Wikipedia, SEC EDGAR, News, Web"]
+        AI["ai/ · LLM Fallback Chain, Live Case Synth, Chat Builder"]
+        Share["share.js · Wi-Fi Phone Pairing"]
+        API --> Research
+        API --> AI
+        API --> Share
+    end
+
+    Client --> Shared
+    Client <-->|"HTTP / SSE"| API
+    API --> Shared
 ```
 
-**API:** `/api/status` · `/api/cases` · `/api/catalogue` · `POST /api/jobs/research` and `POST /api/jobs/chat` (background jobs) · `/api/jobs/:id/events?from=N` (SSE with replay) · `/api/research/stream?q=` (SSE) · `POST /api/chat` (SSE) · `/api/keys` · `POST /api/keys/test` · `POST /api/keys/chain` · `/api/images/search` · `POST /api/images/generate` · `/api/share` (desktop only).
+**API:** `/api/status` · `/api/cases` · `/api/catalogue` · `POST /api/jobs/research` and `POST /api/jobs/chat` (background jobs) · `/api/jobs/:id/events?from=N` (SSE with replay) · `/api/research/stream?q=` (SSE) · `POST /api/chat` (SSE) · `/api/keys` · `POST /api/keys/test` · `POST /api/keys/chain` · `/api/images/search` · `/api/images/generate` · `/api/share` (desktop only).
 
 ## Troubleshooting
 
@@ -177,7 +175,7 @@ mobile/          Android/iOS icons and splash; scripts/prepare-mobile.mjs applie
 
 ## Content standards
 
-Historical outcomes cite sources; corrections to the original curriculum are listed in [docs/CATALOGUE.md](docs/CATALOGUE.md). Book ideas are short paraphrases, no passages reproduced. Charts show only SEC filing data. Unknowns are stated as unknowns.
+Historical outcomes cite sources; corrections to the original curriculum are listed in [docs/CATALOGUE.md](https://www.google.com/search?q=docs/CATALOGUE.md). Book ideas are short paraphrases, no passages reproduced. Charts show only SEC filing data. Unknowns are stated as unknowns.
 
 ## Licence
 
