@@ -1,12 +1,16 @@
-name: Build BIZSIM apps
+name: Build & Release BIZSIM Apps
 
-# Builds every platform on GitHub's free runners. Push a tag like v1.1.0, or run
-# it manually from the Actions tab. Download the results from the run's
-# "Artifacts" section.
+# Builds Windows, macOS, Linux, Android, and iOS on GitHub's free runners.
+# - Push a tag like v1.7.3: builds all platforms, generates SHA256SUMS.txt,
+#   and publishes a GitHub Release with every downloadable installer attached.
+# - Manual run (Actions -> Run workflow): builds all platforms and uploads artifacts.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   desktop:
@@ -24,9 +28,17 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run check
-      - run: npm run dist:${{ matrix.target }} -- --publish never
+      - run: npm test
+      - name: Build Windows & Linux installers
+        if: matrix.target != 'mac'
+        run: npm run dist:${{ matrix.target }} -- --publish never
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false # unsigned; add signing secrets for store distribution
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Build unsigned macOS installers
+        if: matrix.target == 'mac'
+        run: npm run dist:mac -- --publish never -c.mac.hardenedRuntime=false -c.mac.identity=null
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
         with:
           name: bizsim-${{ matrix.target }}
@@ -49,7 +61,7 @@ jobs:
       - run: npm ci
         env: { ELECTRON_SKIP_BINARY_DOWNLOAD: 1 }
       - run: npm run build
-        env: { VITE_API_BASE: '${{ vars.BIZSIM_API_URL }}' } # optional default server
+        env: { VITE_API_BASE: '${{ vars.BIZSIM_API_URL }}' }
       - run: |
           [ -d android ] || npx cap add android
           npx cap sync android
@@ -62,16 +74,20 @@ jobs:
         run: |
           BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
           APK=android/app/build/outputs/apk/release/app-release-unsigned.apk
+          TAG="${GITHUB_REF_NAME:-dev}"
+          OUT="BIZSIM-${TAG}-android.apk"
           $BT/zipalign -f -p 4 $APK aligned.apk
           if [ -n "$KEYSTORE_B64" ]; then
             echo "$KEYSTORE_B64" | base64 -d > release.jks
-            $BT/apksigner sign --ks release.jks --ks-key-alias bizsim --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out BIZSIM-android.apk aligned.apk
+            $BT/apksigner sign --ks release.jks --ks-key-alias bizsim --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out "$OUT" aligned.apk
           else
             keytool -genkeypair -keystore debug.jks -alias bizsim -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=BIZSIM"
-            $BT/apksigner sign --ks debug.jks --ks-pass pass:android --out BIZSIM-android.apk aligned.apk
+            $BT/apksigner sign --ks debug.jks --ks-pass pass:android --out "$OUT" aligned.apk
           fi
       - uses: actions/upload-artifact@v4
-        with: { name: bizsim-android, path: BIZSIM-android.apk }
+        with:
+          name: bizsim-android
+          path: BIZSIM-*-android.apk
 
   ios:
     runs-on: macos-latest
@@ -83,20 +99,42 @@ jobs:
         env: { ELECTRON_SKIP_BINARY_DOWNLOAD: 1 }
       - run: npm run build
         env: { VITE_API_BASE: '${{ vars.BIZSIM_API_URL }}' }
-      # The Xcode project (ios/, Swift Package Manager, no CocoaPods) is in the repo.
       - run: |
           [ -d ios/App ] || npx cap add ios --packagemanager SPM
           npx cap sync ios
           node scripts/prepare-mobile.mjs
-      # Unsigned build: install with Sideloadly or AltStore using your Apple ID,
-      # or add signing in Xcode for TestFlight / App Store.
       - name: Build unsigned IPA
         run: |
+          TAG="${GITHUB_REF_NAME:-dev}"
           cd ios/App
           xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos \
             -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
           mkdir -p Payload && cp -R build/App.xcarchive/Products/Applications/App.app Payload/
-          zip -qry ../../BIZSIM-ios-unsigned.ipa Payload
+          zip -qry "../../BIZSIM-${TAG}-ios-unsigned.ipa" Payload
       - uses: actions/upload-artifact@v4
-        with: { name: bizsim-ios, path: BIZSIM-ios-unsigned.ipa }
+        with:
+          name: bizsim-ios
+          path: BIZSIM-*-ios-unsigned.ipa
+
+  release:
+    needs: [desktop, android, ios]
+    if: always() && startsWith(github.ref, 'refs/tags/v') && (needs.desktop.result == 'success' || needs.android.result == 'success' || needs.ios.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all built app artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+          merge-multiple: true
+      - name: Generate SHA256SUMS.txt
+        run: |
+          cd dist-release
+          ls -la
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist-release/*
