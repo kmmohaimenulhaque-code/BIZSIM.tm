@@ -34,9 +34,12 @@ jobs:
         run: npm run dist:${{ matrix.target }} -- --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-      - name: Build unsigned macOS installers
+      - name: Build unsigned macOS installers (arm64 + x64 sequentially)
         if: matrix.target == 'mac'
-        run: npm run dist:mac -- --publish never -c.mac.hardenedRuntime=false -c.mac.identity=null
+        run: |
+          npm run build
+          npx electron-builder --mac --arm64 --publish never -c.mac.hardenedRuntime=false -c.mac.identity=null
+          npx electron-builder --mac --x64 --publish never -c.mac.hardenedRuntime=false -c.mac.identity=null
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
@@ -109,7 +112,7 @@ jobs:
           cd ios/App
           xcodebuild -project App.xcodeproj -scheme App -configuration Release -sdk iphoneos \
             -destination 'generic/platform=iOS' -archivePath build/App.xcarchive archive \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_IDENTITY=""
           mkdir -p Payload && cp -R build/App.xcarchive/Products/Applications/App.app Payload/
           zip -qry "../../BIZSIM-${TAG}-ios-unsigned.ipa" Payload
       - uses: actions/upload-artifact@v4
