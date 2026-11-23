@@ -2,8 +2,8 @@
 
 **Open-source business case simulation and strategic decision-making.**
 Play real business history as **seasons of four episodes, each made of two or more linked decisions with its own outcome and insight**, from Hammurabi’s Babylon to OpenAI’s boardroom, and see what actually happened, with cited sources. Research any live company from public sources and turn the evidence into a playable season whose last episode is happening now, or describe the season you want in plain language and let the chat builder write it.
+<img width="100%" alt="BIZSIM Overview" src="Screenshots/BIZSIM home.png" />
 
-&lt;img width=&quot;100%&quot; alt=&quot;BIZSIM Overview&quot; src=&quot;Screenshots/BIZSIM home.png&quot; /&gt;
 *Workspace overview with daily featured case, quick research bar, and recent activity.*
 
 No accounts. No tracking. Your progress stays on your devices.
