@@ -7,8 +7,9 @@ import crypto from 'node:crypto';
 import { fetchJson, HttpError } from '../lib/http.js';
 
 const MAX_KEY_CACHE = 256;
-function cacheKeyId(apiKey) {
-  return crypto.createHash('sha256').update(String(apiKey || '')).digest('hex').slice(0, 24);
+const CACHE_HMAC_KEY = crypto.randomBytes(32);
+function cacheKeyId(token) {
+  return crypto.createHmac('sha256', CACHE_HMAC_KEY).update(String(token || '')).digest('hex').slice(0, 24);
 }
 function setBounded(map, k, v) {
   if (map.size >= MAX_KEY_CACHE && !map.has(k)) {

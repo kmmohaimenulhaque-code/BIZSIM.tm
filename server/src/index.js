@@ -452,7 +452,8 @@ export function createApp({ clientDist = config.clientDist } = {}) {
   // Serve the built client (single-page app).
   if (fs.existsSync(path.join(clientDist, 'index.html'))) {
     app.use(express.static(clientDist, { index: false, maxAge: '1h', dotfiles: 'deny' }));
-    app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+    const spaLimit = rateLimiter({ windowMs: 60_000, max: 120 });
+    app.get('*', spaLimit, (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
   }
 
   // Final Express error handler: always redact secrets and never expose stack traces.

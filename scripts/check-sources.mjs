@@ -1,3 +1,4 @@
+import { pageText } from '../server/src/research/sources.js';
 // Checks every source cited by the built-in seasons and records an evidence
 // status for every claim (decision outcomes and evidence items).
 //
@@ -55,7 +56,7 @@ async function fetchSource(url) {
         const res = await fetch(url, { headers: { 'User-Agent': UA }, redirect: 'follow' });
         if (res.status === 429 || res.status >= 500) throw Object.assign(new Error(`HTTP ${res.status}`), { retry: true });
         const html = res.ok ? await res.text() : '';
-        const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ');
+        const text = pageText(html, 50_000);
         const t = /<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1]?.trim();
         result = { url, ok: res.ok, checked: true, status: res.status, title: t || null, text };
       }
