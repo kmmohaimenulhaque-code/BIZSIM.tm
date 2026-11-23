@@ -1,6 +1,6 @@
 {
   "name": "bizsim",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "BIZSIM: open-source business case simulation and strategic decision-making platform.",
   "license": "MIT",
   "type": "module",
