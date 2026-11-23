@@ -758,7 +758,7 @@ export function About() {
     <div className="stack gap-6" style={{ maxWidth: 860 }}>
       <PageHead eyebrow={t('about.eyebrow')} title={t('about.title')} lead={t('about.lead')} />
 
-      <div className="row wrap gap-2" role="tablist" aria-label="About BIZSIM sections">
+      <div className="row wrap gap-2" role="tablist" aria-label="About BIZSIM sections" style={{ alignItems: 'center' }}>
         {[
           ['overview', 'About BIZSIM'],
           ['privacy', 'Privacy Policy'],
@@ -776,10 +776,31 @@ export function About() {
             {label}
           </button>
         ))}
+        <a
+          href="https://github.com/kmmohaimenulhaque-code/BIZSIM.tm"
+          target="_blank"
+          rel="noreferrer"
+          className="chip"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+        >
+          Source Code <ExternalLink size={13} aria-hidden="true" />
+        </a>
       </div>
 
+      <p className="meta">
+        BIZSIM is 100% open source under the MIT License—inspect the code, verify every security control, or download official installers directly from{' '}
+        <a className="link" href="https://github.com/kmmohaimenulhaque-code/BIZSIM.tm" target="_blank" rel="noreferrer">
+          GitHub
+        </a>
+        .
+      </p>
+
       <Callout icon={Download}>
-        <strong>Use the official native apps for personal use.</strong> For the best privacy, offline reliability, and safe local API key handling, download and install the BIZSIM Desktop app (Windows, macOS, Linux) or Mobile app (Android, iOS) instead of relying on a public website deployment.
+        <strong>Use the official native apps for personal use.</strong> For the best privacy, offline reliability, and safe local API key handling,{' '}
+        <a className="link" href="https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/latest" target="_blank" rel="noreferrer">
+          download the latest Desktop (Windows, macOS, Linux) or Mobile (Android, iOS) release
+        </a>{' '}
+        instead of relying on a public website deployment.
       </Callout>
 
       {tab === 'overview' && (
