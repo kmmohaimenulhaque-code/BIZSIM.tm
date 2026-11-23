@@ -453,7 +453,8 @@ export function createApp({ clientDist = config.clientDist } = {}) {
   if (fs.existsSync(path.join(clientDist, 'index.html'))) {
     app.use(express.static(clientDist, { index: false, maxAge: '1h', dotfiles: 'deny' }));
     const spaLimit = rateLimiter({ windowMs: 60_000, max: 120 });
-    app.get('*', spaLimit, (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+    const indexHtml = fs.readFileSync(path.join(clientDist, 'index.html'));
+    app.get('*', spaLimit, (req, res) => res.type('html').send(indexHtml));
   }
 
   // Final Express error handler: always redact secrets and never expose stack traces.
