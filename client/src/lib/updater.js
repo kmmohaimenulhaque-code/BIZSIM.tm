@@ -247,7 +247,28 @@ async function fetchLatestRelease() {
     }
   }
 
-  // Path B: Direct GitHub Releases API fallback (standalone Android/iOS or offline server)
+  // Path B1: Direct latest.json on GitHub Releases CDN (zero API rate limit, works on standalone mobile)
+  try {
+    const ctrl1 = new AbortController();
+    const t1 = setTimeout(() => ctrl1.abort(), 8000);
+    try {
+      const res = await fetch(`https://github.com/${DEFAULT_UPDATE_REPO}/releases/latest/download/latest.json`, {
+        headers: { Accept: 'application/json' },
+        signal: ctrl1.signal,
+      });
+      if (res.ok) {
+        const raw = await res.json();
+        const norm = normalizeRelease(raw, APP_VERSION, platform.id, DEFAULT_UPDATE_REPO);
+        if (norm) return norm;
+      }
+    } finally {
+      clearTimeout(t1);
+    }
+  } catch {
+    /* Fall through to GitHub API */
+  }
+
+  // Path B2: Direct GitHub Releases API fallback
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 10_000);
   try {
@@ -255,6 +276,9 @@ async function fetchLatestRelease() {
       headers: { Accept: 'application/vnd.github+json' },
       signal: ctrl.signal,
     });
+    if (res.status === 403 || res.status === 429) {
+      throw new Error('GitHub rate limit reached. Try again in a few minutes.');
+    }
     if (!res.ok) throw new Error(`GitHub responded ${res.status}`);
     const raw = await res.json();
     const norm = normalizeRelease(raw, APP_VERSION, platform.id, DEFAULT_UPDATE_REPO);

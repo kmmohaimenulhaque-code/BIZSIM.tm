@@ -167,3 +167,17 @@ export function normalizeRelease(raw, currentVersion, platformId = 'web', repo =
     assets,
   };
 }
+
+/**
+ * Parse a GitHub /releases/latest redirect destination URL such as
+ * https://github.com/owner/repo/releases/tag/v1.7.5 into a normalized release descriptor.
+ * Zero GitHub API rate limit cost.
+ */
+export function releaseFromRedirectUrl(finalUrl, currentVersion, platformId = 'web', repo = DEFAULT_UPDATE_REPO) {
+  const safe = safeReleaseUrl(finalUrl);
+  if (!safe) return null;
+  const m = /\/releases\/tag\/([^/?#]+)/i.exec(safe);
+  if (!m) return null;
+  const tag = decodeURIComponent(m[1]);
+  return normalizeRelease({ tag_name: tag, html_url: safe, assets: [] }, currentVersion, platformId, repo);
+}

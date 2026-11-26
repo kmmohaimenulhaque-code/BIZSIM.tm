@@ -8,6 +8,7 @@ import {
   detectPlatform,
   selectReleaseAsset,
   normalizeRelease,
+  releaseFromRedirectUrl,
 } from '../shared/updateCheck.js';
 import { planNotifications, DEFAULT_SETTINGS } from '../shared/notifyPlan.js';
 
@@ -86,4 +87,16 @@ test('planNotifications schedules daily appUpdate reminders when an update is pe
   assert.equal(updates.length, 7);
   assert.equal(updates[0].title, 'Update to version 1.8.0');
   assert.equal(updates[0].link, '/settings');
+});
+
+test('releaseFromRedirectUrl extracts version from GitHub redirect URL without API quota', () => {
+  const r = releaseFromRedirectUrl(
+    'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.5',
+    '1.7.4',
+    'linux-x64',
+  );
+  assert.equal(r.latestVersion, '1.7.5');
+  assert.equal(r.updateAvailable, true);
+  assert.equal(r.releaseUrl, 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.5');
+  assert.equal(releaseFromRedirectUrl('https://evil.example/releases/tag/v9.9.9', '1.7.4'), null);
 });

@@ -12,7 +12,7 @@ import { startJob, getJob, streamJob } from './jobs.js';
 import { searchImages, generateImage, imageGenerationEnabled } from './images/index.js';
 import { llmEnabled } from './ai/llm.js';
 import { currentGeminiModel } from './ai/geminiModels.js';
-import { fetchJson, rateLimiter, redactSecrets, redactSecretsDeep, ttlCache } from './lib/http.js';
+import { fetchJson, fetchText, rateLimiter, redactSecrets, redactSecretsDeep, ttlCache } from './lib/http.js';
 import { createConcurrencyLimiter, checkPublicAiToken } from './lib/netSafety.js';
 import { CASES } from '../../shared/cases/index.js';
 import { cleanLocale } from '../../shared/locales.js';
@@ -20,7 +20,7 @@ import { BOOKS, PRINCIPLES } from '../../shared/books.js';
 import { CATALOGUE } from '../../shared/catalogue.js';
 import { enableShare, disableShare, shareState, initPairingStore, revokeDevice, revokeAll, newPairingCode } from './share.js';
 import { open as openSealed } from '../../shared/sealed.js';
-import { DEFAULT_UPDATE_REPO, normalizeRelease } from '../../shared/updateCheck.js';
+import { DEFAULT_UPDATE_REPO, normalizeRelease, releaseFromRedirectUrl } from '../../shared/updateCheck.js';
 
 const pkg = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
@@ -200,8 +200,12 @@ export function createApp({ clientDist = config.clientDist } = {}) {
     });
   });
 
-  // Universal release update checker (cached 30 min, SSRF-safe, zero tracking).
+  // Universal release update checker (3-tier zero-403 fallback, cached 30 min, SSRF-safe, zero tracking).
+  // Tier 1: releases/latest/download/latest.json (GitHub CDN, zero API rate limits)
+  // Tier 2: GitHub Releases REST API (supports optional GITHUB_TOKEN)
+  // Tier 3: releases/latest web redirect (zero API rate limits)
   const updateCache = ttlCache(30 * 60_000, 4);
+  const lastGoodUpdate = new Map();
   const updateLimit = rateLimiter({ windowMs: 60_000, max: 12 });
   app.get('/api/update/check', updateLimit, async (req, res) => {
     if (process.env.BIZSIM_DISABLE_UPDATE_CHECK === '1') {
@@ -214,24 +218,60 @@ export function createApp({ clientDist = config.clientDist } = {}) {
       res.setHeader('Cache-Control', 'public, max-age=300');
       return res.json(cached);
     }
+    let norm = null;
+    // Tier 1: Static latest.json asset on GitHub CDN (no 60 req/hr API rate limit)
     try {
-      const raw = await fetchJson(`https://api.github.com/repos/${repo}/releases/latest`, {
-        timeout: 8000,
-        maxBytes: 512_000,
-        headers: {
+      const raw = await fetchJson(`https://github.com/${repo}/releases/latest/download/latest.json`, {
+        timeout: 7000,
+        maxBytes: 256_000,
+      });
+      norm = normalizeRelease(raw, pkg.version, 'web', repo);
+    } catch {
+      /* fall through to Tier 2 */
+    }
+    // Tier 2: GitHub Releases API (uses GITHUB_TOKEN if configured)
+    if (!norm) {
+      try {
+        const headers = {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
-        },
-      });
-      const norm = normalizeRelease(raw, pkg.version, 'web', repo);
-      if (!norm) return res.status(502).json({ ok: false, error: 'Invalid release metadata.' });
+        };
+        if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+        const raw = await fetchJson(`https://api.github.com/repos/${repo}/releases/latest`, {
+          timeout: 8000,
+          maxBytes: 512_000,
+          headers,
+        });
+        norm = normalizeRelease(raw, pkg.version, 'web', repo);
+      } catch {
+        /* fall through to Tier 3 */
+      }
+    }
+    // Tier 3: GitHub web redirect /releases/latest -> /releases/tag/vX.Y.Z (no API rate limit)
+    if (!norm) {
+      try {
+        const r = await fetchText(`https://github.com/${repo}/releases/latest`, {
+          timeout: 8000,
+          maxBytes: 256_000,
+          headers: { Accept: 'text/html' },
+        });
+        norm = releaseFromRedirectUrl(r.url, pkg.version, 'web', repo);
+      } catch {
+        /* all tiers unavailable */
+      }
+    }
+    if (norm) {
       const payload = { ok: true, ...norm, checkedAt: new Date().toISOString() };
       updateCache.set(repo, payload);
+      lastGoodUpdate.set(repo, payload);
       res.setHeader('Cache-Control', 'public, max-age=300');
       return res.json(payload);
-    } catch {
-      return res.status(502).json({ ok: false, offline: true, currentVersion: pkg.version, error: 'Could not reach GitHub Releases.' });
     }
+    if (lastGoodUpdate.has(repo)) {
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      return res.json({ ...lastGoodUpdate.get(repo), stale: true });
+    }
+    return res.status(502).json({ ok: false, offline: true, currentVersion: pkg.version, error: 'Could not reach GitHub Releases right now.' });
   });
 
   // Wi-Fi sharing controls, only from the computer itself (desktop app).

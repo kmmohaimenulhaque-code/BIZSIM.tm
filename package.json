@@ -1,6 +1,6 @@
 {
   "name": "bizsim",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "BIZSIM: open-source business case simulation and strategic decision-making platform.",
   "license": "MIT",
   "type": "module",
@@ -46,7 +46,7 @@
     "@capacitor/share": "^7.0.4",
     "@fontsource-variable/inter": "^5.2.5",
     "@mintplex-labs/piper-tts-web": "^1.0.5",
-    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "electron": "^45.3.4",
     "electron-builder": "^26.18.0",
     "fflate": "^0.8.3",
@@ -58,8 +58,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.7.4",
-    "react-router-dom": "^7.18.6",
-    "vite": "^8.3.8"
+    "react-router-dom": "^6.28.0",
+    "vite": "^5.4.11"
   },
   "build": {
     "appId": "org.bizsim.app",
@@ -176,8 +176,5 @@
         "role": "Viewer"
       }
     ]
-  },
-  "overrides": {
-    "minimatch": "^11.0.1"
   }
 }

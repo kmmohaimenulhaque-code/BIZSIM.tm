@@ -81,11 +81,15 @@ jobs:
           OUT="BIZSIM-${TAG}-android.apk"
           $BT/zipalign -f -p 4 $APK aligned.apk
           if [ -n "$KEYSTORE_B64" ]; then
+            echo "Signing APK with permanent release keystore (ANDROID_KEYSTORE_B64)"
             echo "$KEYSTORE_B64" | base64 -d > release.jks
-            $BT/apksigner sign --ks release.jks --ks-key-alias bizsim --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out "$OUT" aligned.apk
+            $BT/apksigner sign --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+              --ks release.jks --ks-key-alias bizsim --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD --out "$OUT" aligned.apk
           else
+            echo "::warning::ANDROID_KEYSTORE_B64 secret not set! Using ephemeral debug keystore (in-place Android upgrades will fail until a permanent keystore secret is configured)."
             keytool -genkeypair -keystore debug.jks -alias bizsim -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=BIZSIM"
-            $BT/apksigner sign --ks debug.jks --ks-pass pass:android --out "$OUT" aligned.apk
+            $BT/apksigner sign --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+              --ks debug.jks --ks-pass pass:android --out "$OUT" aligned.apk
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -136,6 +140,33 @@ jobs:
           ls -la
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
+      - name: Generate latest.json manifest (rate-limit-free update metadata)
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          node - <<'EOF'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const dir = 'dist-release';
+          const tag = process.env.TAG;
+          const repo = process.env.REPO;
+          const files = fs.readdirSync(dir).filter((f) => f !== 'latest.json').sort();
+          const assets = files.map((name) => ({
+            name,
+            browser_download_url: `https://github.com/${repo}/releases/download/${tag}/${encodeURIComponent(name)}`,
+            size: fs.statSync(path.join(dir, name)).size,
+          }));
+          const manifest = {
+            tag_name: tag,
+            html_url: `https://github.com/${repo}/releases/tag/${tag}`,
+            published_at: new Date().toISOString(),
+            body: `BIZSIM ${tag} release.`,
+            assets,
+          };
+          fs.writeFileSync(path.join(dir, 'latest.json'), JSON.stringify(manifest, null, 2) + '\n');
+          console.log('Generated latest.json with', assets.length, 'assets');
+          EOF
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
