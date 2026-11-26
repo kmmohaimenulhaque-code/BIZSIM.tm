@@ -140,7 +140,8 @@ export async function runResearch(query, emit = () => {}, { generate = true, loc
     stage('synthesis', 'running');
     try {
       result.generated = await synthesiseCase(result, (detail) => stage('synthesis', 'running', detail), { locale: lang });
-      stage('synthesis', 'done', `${seasonShape(result.generated.case)}${result.generated.case.model ? ` · ${result.generated.case.model}` : ''}`);
+      const partialNote = result.generated.case.partial ? ` · Partial (${result.generated.case.partial.completedEpisodes} of ${result.generated.case.partial.plannedEpisodes} episodes)` : '';
+      stage('synthesis', 'done', `${seasonShape(result.generated.case)}${partialNote}${result.generated.case.model ? ` · ${result.generated.case.model}` : ''}`);
     } catch (e) {
       stage('synthesis', 'error', e.message);
     }
@@ -149,7 +150,7 @@ export async function runResearch(query, emit = () => {}, { generate = true, loc
   delete result.wikipediaFull; // used for synthesis only; too large to send to the browser
   result.finishedAt = new Date().toISOString();
   // Only reuse fully successful research; failures should be retried fresh.
-  if (!Object.values(result.stages).some((st) => st.status === 'error')) cache.set(cacheKey, result);
+  if (!Object.values(result.stages).some((st) => st.status === 'error') && !result.generated?.case?.partial) cache.set(cacheKey, result);
   emit('result', result);
   return result;
 }

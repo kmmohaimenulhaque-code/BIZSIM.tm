@@ -123,28 +123,41 @@ export async function writeSeasonParts({ system, brief, sourceIds, isLive, liveL
 
   let done = 0;
   const models = new Set([frame.__model].filter(Boolean));
-  const written = await pool(eps, 2, async (e, i) => {
+  const settled = await pool(eps, 2, async (e, i) => {
     onProgress?.(`Writing episode ${ROMAN[i]} of IV: ${e.title}`);
-    const value = await completeJson({
-      system: `${system}\n${EPISODE_RULES}`,
-      user: `${brief}\n\nSEASON: ${frame.title}\nSituation: ${frame.situation.headline}\nAll episodes:\n${outline}\n\nWRITE EPISODE ${ROMAN[i]} ONLY: "${e.title}" (${e.dateLabel || ''}). Turning point: ${e.focus || e.title}.\nThis episode is ${e.live ? 'LIVE (an open decision happening now: no historical options, no outcomes)' : 'documented history (one historical option per decision, cited outcomes)'}.\n\nPRINCIPLES LIBRARY (cite by id only):\n${principlesText()}\n\n${episodeSchemaText()}`,
-      maxTokens: 6000,
-      validate: (v) => checkEpisode(v, { live: e.live, sourceIds }),
-      onAttempt: ({ model, attempt, reason }) => {
-        if (attempt > 1) onProgress?.(`Episode ${ROMAN[i]}, fallback ${attempt}: ${model} (previous: ${reason})`);
-      },
-    });
-    if (value.__model) models.add(value.__model);
-    done++;
-    onProgress?.(`Episode ${ROMAN[i]} ready (${value.decisions.length} decisions, ${done} of 4 episodes done)`);
-    return value;
+    try {
+      const value = await completeJson({
+        system: `${system}\n${EPISODE_RULES}`,
+        user: `${brief}\n\nSEASON: ${frame.title}\nSituation: ${frame.situation.headline}\nAll episodes:\n${outline}\n\nWRITE EPISODE ${ROMAN[i]} ONLY: "${e.title}" (${e.dateLabel || ''}). Turning point: ${e.focus || e.title}.\nThis episode is ${e.live ? 'LIVE (an open decision happening now: no historical options, no outcomes)' : 'documented history (one historical option per decision, cited outcomes)'}.\n\nPRINCIPLES LIBRARY (cite by id only):\n${principlesText()}\n\n${episodeSchemaText()}`,
+        maxTokens: 6000,
+        validate: (v) => checkEpisode(v, { live: e.live, sourceIds }),
+        onAttempt: ({ model, attempt, reason }) => {
+          if (attempt > 1) onProgress?.(`Episode ${ROMAN[i]}, fallback ${attempt}: ${model} (previous: ${reason})`);
+        },
+      });
+      if (value.__model) models.add(value.__model);
+      done++;
+      onProgress?.(`Episode ${ROMAN[i]} ready (${value.decisions.length} decisions, ${done} of ${eps.length} episodes done)`);
+      return { ok: true, index: i, value };
+    } catch (err) {
+      const msg = err?.message || 'Episode generation failed';
+      onProgress?.(`Episode ${ROMAN[i]} could not be finished (${msg.slice(0, 120)})`);
+      return { ok: false, index: i, roman: ROMAN[i], title: e.title, error: msg };
+    }
   });
+
+  const succeeded = settled.filter((r) => r?.ok);
+  const failed = settled.filter((r) => r && !r.ok);
+  if (!succeeded.length) {
+    throw new Error(failed[0]?.error || 'Could not write any episodes for this season.');
+  }
 
   const checkpoints = [];
   const episodes = [];
-  written.forEach((w, i) => {
-    const n = i + 1;
-    const e = eps[i];
+  succeeded.forEach((item, seqIdx) => {
+    const n = seqIdx + 1;
+    const e = eps[item.index];
+    const w = item.value;
     w.decisions.forEach((k, j) => {
       checkpoints.push({
         ...k,
@@ -158,5 +171,20 @@ export async function writeSeasonParts({ system, brief, sourceIds, isLive, liveL
     });
     episodes.push({ n, title: e.title, dateLabel: e.dateLabel || '', ...(e.live ? { live: true } : {}), insight: w.insight });
   });
-  return { frame, checkpoints, episodes, model: [...models].join(' + ') };
+
+  const partial = failed.length
+    ? {
+        completedEpisodes: episodes.length,
+        plannedEpisodes: eps.length,
+        failedEpisodes: failed.map((f) => ({
+          episode: f.index + 1,
+          roman: f.roman,
+          title: f.title,
+          error: String(f.error || '').slice(0, 600),
+        })),
+        message: `Delivered ${episodes.length} of ${eps.length} episodes. Episode${failed.length > 1 ? 's' : ''} ${failed.map((f) => f.roman).join(', ')} could not be completed after all AI fallbacks exhausted: ${String(failed[0].error || '').slice(0, 400)}`,
+      }
+    : null;
+
+  return { frame, checkpoints, episodes, model: [...models].join(' + '), partial };
 }

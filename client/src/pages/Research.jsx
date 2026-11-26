@@ -270,6 +270,11 @@ function Analysis({ r, status }) {
       <Callout tone="ai" icon={Sparkles}>
         <strong>{t('research.analysis.title')}</strong> {t('research.analysis.by', { provider: status?.ai?.provider || g.provider || '', model: status?.ai?.model || g.model || '', count: g.sources.length })} {r.generated.warnings?.length ? t('research.analysis.removed', { count: r.generated.warnings.length }) : ''}
       </Callout>
+      {g.partial && (
+        <Callout tone="warning" icon={AlertTriangle}>
+          <strong>Partial season delivered ({g.partial.completedEpisodes} of {g.partial.plannedEpisodes} episodes).</strong> {g.partial.message}
+        </Callout>
+      )}
       <div>
         <ListenButton
           id={`analysis-${g.id}`}

@@ -118,10 +118,12 @@ ${dossier.text}`;
       lessons: raw.lessons || [],
     },
   };
-  const { ok, errors, warnings, value } = validateCase(candidate, { requireHistorical: true, episodes: 4 });
+  const expectedEpisodes = parts.partial ? parts.episodes.length : 4;
+  const { ok, errors, warnings, value } = validateCase(candidate, { requireHistorical: true, episodes: expectedEpisodes });
   if (!ok) throw new Error(`case failed checks: ${errors.slice(0, 3).join('; ')}`);
   value.model = parts.model;
   value.aiGenerated = true;
+  if (parts.partial) value.partial = parts.partial;
   // Compare each outcome and evidence item with the dossier text it cites.
   const textById = {};
   for (const line of dossier.text.split('\n')) {

@@ -263,6 +263,26 @@ export function sanitizeCase(input, { source } = {}) {
     coverUrl: typeof input.coverUrl === 'string' ? sanitizeImageUrl(input.coverUrl, title) || undefined : undefined,
     reading: cleanStr(input.reading, LIMITS.short * 2),
     catalogueId: cleanStr(input.catalogueId, 40),
+    partial:
+      input.partial && typeof input.partial === 'object'
+        ? compact({
+            completedEpisodes: int(input.partial.completedEpisodes, 1, LIMITS.episodes, undefined),
+            plannedEpisodes: int(input.partial.plannedEpisodes, 1, LIMITS.episodes, undefined),
+            message: cleanStr(input.partial.message, 800),
+            failedEpisodes: arr(input.partial.failedEpisodes, LIMITS.episodes)
+              .map((f) =>
+                f && typeof f === 'object'
+                  ? compact({
+                      episode: int(f.episode, 1, LIMITS.episodes, undefined),
+                      roman: cleanStr(f.roman, 10),
+                      title: cleanStr(f.title, LIMITS.short),
+                      error: cleanStr(f.error, 600),
+                    })
+                  : null,
+              )
+              .filter(Boolean),
+          })
+        : undefined,
     evidenceChecks: evidenceChecks(input.evidenceChecks),
     evidenceCheckedAt: cleanStr(input.evidenceCheckedAt, 40),
     situation,

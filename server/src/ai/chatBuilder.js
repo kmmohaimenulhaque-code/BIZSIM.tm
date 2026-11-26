@@ -185,10 +185,12 @@ ${dossier}`;
       lessons: raw.lessons || [],
     },
   };
-  const { ok, errors, warnings, value } = validateCase(candidate, { requireHistorical: true, episodes: 4 });
+  const expectedEpisodes = parts.partial ? parts.episodes.length : 4;
+  const { ok, errors, warnings, value } = validateCase(candidate, { requireHistorical: true, episodes: expectedEpisodes });
   if (!ok) throw new Error(`season failed checks: ${errors.slice(0, 3).join('; ')}`);
   value.model = parts.model;
   value.aiGenerated = true;
+  if (parts.partial) value.partial = parts.partial;
   value.evidenceChecks = checkCaseClaims(value, Object.fromEntries(sources.map((s) => [s.id, s.text || ''])));
   value.evidenceCheckedAt = new Date().toISOString();
   return { case: value, warnings, userPrinciples: (spec.userPrinciples || []).filter((x) => typeof x === 'string') };

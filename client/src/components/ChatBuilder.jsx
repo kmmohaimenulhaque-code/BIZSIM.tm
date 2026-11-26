@@ -106,6 +106,11 @@ export default function ChatBuilder() {
                   <Badge tone="ai" icon={Sparkles}>
                     {t('chat.newSeason')}
                   </Badge>
+                  {m.season.partial && (
+                    <Badge tone="warning" icon={AlertTriangle}>
+                      Partial · {m.season.partial.completedEpisodes} of {m.season.partial.plannedEpisodes} episodes
+                    </Badge>
+                  )}
                   <span className="meta num">{m.season.yearLabel}</span>
                 </div>
                 <strong className="h3">{m.season.title}</strong>
@@ -122,6 +127,11 @@ export default function ChatBuilder() {
                   <span className="meta row gap-1">
                     <BookOpen size={12} aria-hidden="true" /> {t('chat.linked', { names: m.linked.map((id) => lib.principleById[id]?.name).filter(Boolean).join(', ') })}
                   </span>
+                )}
+                {m.season.partial?.message && (
+                  <p className="chat-error row gap-2" style={{ margin: 0 }}>
+                    <AlertTriangle size={14} aria-hidden="true" /> {m.season.partial.message}
+                  </p>
                 )}
                 <div className="row gap-2 wrap">
                   <Link to={`/cases/${m.season.id}`} className="btn btn-primary btn-sm">

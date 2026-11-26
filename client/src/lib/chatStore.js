@@ -19,7 +19,7 @@ function load() {
     return [];
   }
 }
-const slim = (c) => ({ id: c.id, title: c.title, company: c.company, yearLabel: c.yearLabel, episodes: c.checkpoints ? episodesOf(c).map((e) => ({ title: e.title, dateLabel: e.dateLabel, decisions: e.decisions.map((k) => k.id) })) : c.episodes || [], model: c.model });
+const slim = (c) => ({ id: c.id, title: c.title, company: c.company, yearLabel: c.yearLabel, episodes: c.checkpoints ? episodesOf(c).map((e) => ({ title: e.title, dateLabel: e.dateLabel, decisions: e.decisions.map((k) => k.id) })) : c.episodes || [], model: c.model, partial: c.partial || undefined });
 
 export function setChatItems(next) {
   items = typeof next === 'function' ? next(items) : next;
