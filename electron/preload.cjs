@@ -11,6 +11,14 @@ contextBridge.exposeInMainWorld('bizsimDesktop', {
   resetDataFolder: () => ipcRenderer.invoke('bizsim:reset-data-folder'),
   openFolder: (p) => ipcRenderer.invoke('bizsim:open-folder', p),
   relaunch: () => ipcRenderer.invoke('bizsim:relaunch'),
+  downloadUpdate: (payload) => ipcRenderer.invoke('bizsim:update-download', payload),
+  cancelUpdate: () => ipcRenderer.invoke('bizsim:update-cancel'),
+  installUpdate: () => ipcRenderer.invoke('bizsim:update-install'),
+  onUpdateProgress: (cb) => {
+    const h = (_e, data) => data && typeof data === 'object' && cb(data);
+    ipcRenderer.on('bizsim:update-progress', h);
+    return () => ipcRenderer.removeListener('bizsim:update-progress', h);
+  },
   // Season reports in scripts the built-in PDF fonts cannot shape (Bengali,
   // Arabic, Hindi, CJK...) are rendered by Chromium. Returns the PDF bytes.
   htmlToPdf: (html) => ipcRenderer.invoke('bizsim:html-to-pdf', html),

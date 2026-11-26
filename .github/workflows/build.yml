@@ -151,7 +151,7 @@ jobs:
           const dir = 'dist-release';
           const tag = process.env.TAG;
           const repo = process.env.REPO;
-          const files = fs.readdirSync(dir).filter((f) => f !== 'latest.json').sort();
+          const files = fs.readdirSync(dir).filter((f) => f !== 'latest.json' && f !== 'altstore-source.json').sort();
           const assets = files.map((name) => ({
             name,
             browser_download_url: `https://github.com/${repo}/releases/download/${tag}/${encodeURIComponent(name)}`,
@@ -166,6 +166,36 @@ jobs:
           };
           fs.writeFileSync(path.join(dir, 'latest.json'), JSON.stringify(manifest, null, 2) + '\n');
           console.log('Generated latest.json with', assets.length, 'assets');
+          const ipa = assets.find((a) => /ios-unsigned\.ipa$/i.test(a.name));
+          if (ipa) {
+            const ver = tag.replace(/^v/, '');
+            const altstore = {
+              name: 'BIZSIM Official Source',
+              identifier: 'org.bizsim.app.source',
+              subtitle: 'Open-source business case simulation and strategic decision-making.',
+              sourceURL: `https://github.com/${repo}/releases/latest/download/altstore-source.json`,
+              apps: [{
+                name: 'BIZSIM',
+                bundleIdentifier: 'org.bizsim.app',
+                developerName: 'BIZSIM Contributors',
+                subtitle: '200 offline strategy seasons + live company research',
+                localizedDescription: 'Play real business history as 4-episode seasons, research live companies, or build custom cases with AI. Zero login, local-first, MIT open source.',
+                iconURL: `https://raw.githubusercontent.com/${repo}/main/client/public/icons/icon-512.png`,
+                tintColor: '#C9A96E',
+                category: 'education',
+                versions: [{
+                  version: ver,
+                  date: new Date().toISOString().slice(0, 10),
+                  localizedDescription: `BIZSIM ${tag} release.`,
+                  downloadURL: ipa.browser_download_url,
+                  size: ipa.size,
+                  minOSVersion: '14.0',
+                }],
+              }],
+            };
+            fs.writeFileSync(path.join(dir, 'altstore-source.json'), JSON.stringify(altstore, null, 2) + '\n');
+            console.log('Generated altstore-source.json for', ipa.name);
+          }
           EOF
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

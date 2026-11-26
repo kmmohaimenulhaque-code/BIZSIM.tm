@@ -19,7 +19,9 @@ const MOCK_RELEASE = {
   body: '### Highlights\n- Faster Live Research and new update checker.',
   assets: [
     { name: 'BIZSIM-Setup-1.8.0-windows-x64.exe', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-Setup-1.8.0-windows-x64.exe', size: 149000000 },
+    { name: 'BIZSIM-1.8.0-mac-arm64.zip', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-1.8.0-mac-arm64.zip', size: 150000000 },
     { name: 'BIZSIM-1.8.0-mac-arm64.dmg', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-1.8.0-mac-arm64.dmg', size: 152000000 },
+    { name: 'BIZSIM-1.8.0-mac-x64.zip', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-1.8.0-mac-x64.zip', size: 151000000 },
     { name: 'BIZSIM-1.8.0-mac-x64.dmg', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-1.8.0-mac-x64.dmg', size: 154000000 },
     { name: 'BIZSIM-1.8.0-linux-x86_64.AppImage', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-1.8.0-linux-x86_64.AppImage', size: 158000000 },
     { name: 'BIZSIM-v1.8.0-android.apk', browser_download_url: 'https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/download/v1.8.0/BIZSIM-v1.8.0-android.apk', size: 29500000 },
@@ -64,8 +66,8 @@ test('normalizeRelease matches exact platform asset and strips untrusted hosts',
   assert.ok(win.checksumUrl.endsWith('SHA256SUMS.txt'));
   assert.equal(win.assets.some((a) => a.name === 'evil.exe'), false);
 
-  assert.equal(selectReleaseAsset(win.assets, 'mac-arm64').name, 'BIZSIM-1.8.0-mac-arm64.dmg');
-  assert.equal(selectReleaseAsset(win.assets, 'mac-x64').name, 'BIZSIM-1.8.0-mac-x64.dmg');
+  assert.equal(selectReleaseAsset(win.assets, 'mac-arm64').name, 'BIZSIM-1.8.0-mac-arm64.zip');
+  assert.equal(selectReleaseAsset(win.assets, 'mac-x64').name, 'BIZSIM-1.8.0-mac-x64.zip');
   assert.equal(selectReleaseAsset(win.assets, 'linux-x64').name, 'BIZSIM-1.8.0-linux-x86_64.AppImage');
   assert.equal(selectReleaseAsset(win.assets, 'android').name, 'BIZSIM-v1.8.0-android.apk');
   assert.equal(selectReleaseAsset(win.assets, 'ios').name, 'BIZSIM-v1.8.0-ios-unsigned.ipa');

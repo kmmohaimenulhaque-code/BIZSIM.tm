@@ -101,8 +101,8 @@ export function detectPlatform(env) {
 
 const ASSET_PATTERNS = {
   'windows-x64': [/windows-x64\.exe$/i, /\.exe$/i],
-  'mac-arm64': [/mac-arm64\.dmg$/i, /mac-arm64\.zip$/i, /mac-arm64\.pkg$/i],
-  'mac-x64': [/mac-x64\.dmg$/i, /mac-x64\.zip$/i, /mac-x64\.pkg$/i],
+  'mac-arm64': [/mac-arm64\.zip$/i, /mac-arm64\.dmg$/i, /mac-arm64\.pkg$/i],
+  'mac-x64': [/mac-x64\.zip$/i, /mac-x64\.dmg$/i, /mac-x64\.pkg$/i],
   'linux-x64': [/linux-x86_64\.AppImage$/i, /\.AppImage$/i, /linux-x64\.tar\.gz$/i],
   android: [/android\.apk$/i, /\.apk$/i],
   ios: [/ios-unsigned\.ipa$/i, /\.ipa$/i],

@@ -45,13 +45,26 @@ function savePersisted(next) {
 }
 
 const platform = detectPlatform();
+const getAndroidUpdater = () =>
+  typeof window !== 'undefined' &&
+  window.Capacitor?.isNativePlatform?.() &&
+  window.Capacitor?.getPlatform?.() === 'android'
+    ? window.Capacitor?.Plugins?.BizsimUpdater || null
+    : null;
+const hasNativeUpdater = () =>
+  Boolean(
+    (typeof window !== 'undefined' && typeof window.bizsimDesktop?.downloadUpdate === 'function') ||
+      typeof getAndroidUpdater()?.downloadUpdate === 'function',
+  );
 
 let state = {
   ...loadPersisted(),
   platform,
+  nativeUpdater: hasNativeUpdater(),
   checking: false,
   error: null,
   toast: null, // { version, url, assetName } | null
+  download: null, // { phase, percent, received, total, version, assetName, verified, error } | null
 };
 
 // Recompute updateAvailable against the currently running APP_VERSION
@@ -157,6 +170,68 @@ export function setUpdatePrefs(patch) {
 
 export function skipVersion(version) {
   setUpdatePrefs({ skippedVersion: version || null });
+}
+
+export async function startNativeUpdate() {
+  const r = state.release;
+  if (!hasNativeUpdater() || !r?.asset?.url || !r?.asset?.name) {
+    throw new Error('Native in-app update is unavailable for this build.');
+  }
+  state = { ...state, download: { phase: 'downloading', percent: 0, received: 0, total: r.asset.size || 0, version: r.latestVersion, assetName: r.asset.name } };
+  emit();
+  const payload = {
+    url: r.asset.url,
+    assetName: r.asset.name,
+    version: r.latestVersion,
+    checksumUrl: r.checksumUrl || null,
+  };
+  try {
+    if (typeof window.bizsimDesktop?.downloadUpdate === 'function') {
+      return await window.bizsimDesktop.downloadUpdate(payload);
+    }
+    const android = getAndroidUpdater();
+    if (android) return await android.downloadUpdate(payload);
+    throw new Error('Native in-app update is unavailable for this build.');
+  } catch (e) {
+    const msg = e?.message || 'Update download failed.';
+    state = { ...state, download: { phase: 'error', error: msg, version: r.latestVersion, assetName: r.asset.name } };
+    emit();
+    throw e;
+  }
+}
+
+export function cancelNativeUpdate() {
+  if (typeof window !== 'undefined' && window.bizsimDesktop?.cancelUpdate) window.bizsimDesktop.cancelUpdate();
+  else getAndroidUpdater()?.cancelUpdate?.().catch?.(() => {});
+  state = { ...state, download: null };
+  emit();
+}
+
+export async function installNativeUpdate() {
+  if (!hasNativeUpdater()) throw new Error('Native updater unavailable.');
+  const prev = state.download;
+  state = { ...state, download: { ...(prev || {}), phase: 'installing' } };
+  emit();
+  try {
+    if (typeof window.bizsimDesktop?.installUpdate === 'function') {
+      return await window.bizsimDesktop.installUpdate();
+    }
+    const android = getAndroidUpdater();
+    if (android) {
+      const res = await android.installUpdate();
+      if (res?.needsPermission) {
+        state = { ...state, download: { ...(prev || {}), phase: 'ready' } };
+        emit();
+      }
+      return res;
+    }
+    throw new Error('Native updater unavailable.');
+  } catch (e) {
+    const msg = e?.message || 'Could not install update.';
+    state = { ...state, download: { ...(state.download || {}), phase: 'error', error: msg } };
+    emit();
+    throw e;
+  }
 }
 
 /** Pending update descriptor consumed by notifyPlan.js for daily native/desktop reminders. */
@@ -341,6 +416,16 @@ export function initUpdater() {
   if (initialized) return;
   initialized = true;
   registerUpdateProvider(getPendingUpdateForPlan);
+  const onProg = (p) => {
+    state = { ...state, download: p?.phase === 'canceled' ? null : p };
+    emit();
+  };
+  if (typeof window !== 'undefined' && typeof window.bizsimDesktop?.onUpdateProgress === 'function') {
+    window.bizsimDesktop.onUpdateProgress(onProg);
+  } else {
+    const android = getAndroidUpdater();
+    android?.addListener?.('updateProgress', onProg)?.catch?.(() => {});
+  }
 
   // Delay initial check slightly so first paint & critical data load stay instant
   setTimeout(() => {

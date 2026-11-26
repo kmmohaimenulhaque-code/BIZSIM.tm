@@ -29,6 +29,7 @@ if (fs.existsSync(android)) {
   const mf = path.join(android, 'app/src/main/AndroidManifest.xml');
   let m = fs.readFileSync(mf, 'utf8');
   if (!m.includes('android.permission.CAMERA')) m = m.replace('<uses-permission android:name="android.permission.INTERNET" />', '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />');
+  if (!m.includes('REQUEST_INSTALL_PACKAGES')) m = m.replace('<uses-permission android:name="android.permission.INTERNET" />', '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />');
   if (!m.includes('usesCleartextTraffic')) m = m.replace('<application', '<application\n        android:usesCleartextTraffic="true"');
   // Open .bizsim season packages from file managers and other apps.
   if (!m.includes('application/vnd.bizsim+json')) {

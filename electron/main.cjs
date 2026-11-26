@@ -4,6 +4,7 @@ const { app, BrowserWindow, shell, Menu, ipcMain, dialog, session } = require('e
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
+const { createDesktopUpdater } = require('./updater.cjs');
 
 // ---------- Where BIZSIM keeps its data ----------
 // The default folder (e.g. ~/.config/bizsim) always holds a small "location.json"
@@ -129,6 +130,32 @@ ipcMain.handle('bizsim:reset-data-folder', async () => {
 ipcMain.handle('bizsim:relaunch', () => {
   app.relaunch();
   app.exit(0);
+});
+
+// ---------- Native in-app desktop updater ----------
+let desktopUpdater = null;
+const getDesktopUpdater = () => {
+  if (!desktopUpdater) {
+    desktopUpdater = createDesktopUpdater({
+      userDataDir: app.getPath('userData'),
+      onProgress: (payload) => {
+        if (win && !win.isDestroyed()) win.webContents.send('bizsim:update-progress', payload);
+      },
+    });
+  }
+  return desktopUpdater;
+};
+ipcMain.handle('bizsim:update-download', async (e, payload) => {
+  if (!win || e.sender !== win.webContents) throw new Error('Not allowed');
+  return getDesktopUpdater().download(payload || {});
+});
+ipcMain.handle('bizsim:update-cancel', (e) => {
+  if (!win || e.sender !== win.webContents) throw new Error('Not allowed');
+  return getDesktopUpdater().cancel();
+});
+ipcMain.handle('bizsim:update-install', async (e) => {
+  if (!win || e.sender !== win.webContents) throw new Error('Not allowed');
+  return getDesktopUpdater().installAndRestart({ app, shell, session });
 });
 
 ipcMain.handle('bizsim:open-folder', (e, p) => {
