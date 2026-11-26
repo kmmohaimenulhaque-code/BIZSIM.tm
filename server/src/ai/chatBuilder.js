@@ -79,34 +79,59 @@ function firstYear(text) {
 }
 
 async function searchTitles(q, limit = 4) {
-  const u = `https://en.wikipedia.org/w/api.php?action=query&list=search&srlimit=${limit}&srnamespace=0&format=json&srsearch=${encodeURIComponent(q)}`;
-  const d = await fetchJson(u);
-  return (d.query?.search || []).map((h) => h.title);
+  const query = String(q || '').trim();
+  if (!query) return [];
+  try {
+    const u = `https://en.wikipedia.org/w/api.php?action=query&list=search&srlimit=${limit}&srnamespace=0&format=json&srsearch=${encodeURIComponent(query)}`;
+    const d = await fetchJson(u, { timeout: 12000 });
+    const hits = (d.query?.search || []).map((h) => h.title).filter(Boolean);
+    if (hits.length) return hits;
+  } catch {
+    /* fall through to opensearch */
+  }
+  try {
+    const u2 = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=${limit}&namespace=0&format=json`;
+    const d2 = await fetchJson(u2, { timeout: 12000 });
+    return Array.isArray(d2?.[1]) ? d2[1].filter((x) => typeof x === 'string' && x.trim()) : [];
+  } catch {
+    return [];
+  }
 }
 
 /** Find the main article and up to two related ones for a season spec. */
 async function ground(spec) {
   let main = null;
-  for (const t of [spec.wikipedia, spec.subject].filter(Boolean)) {
+  let lastErr = null;
+  const directCandidates = [...new Set([spec.wikipedia, spec.subject].map((s) => String(s || '').trim()).filter(Boolean))];
+  for (const t of directCandidates) {
     try {
       main = await wikipediaArticle(t, 28000);
       break;
-    } catch {
-      /* try the next name */
+    } catch (e) {
+      lastErr = e;
     }
   }
   if (!main) {
-    const hits = await searchTitles(`${spec.subject} ${spec.angle || ''}`.trim(), 3).catch(() => []);
-    for (const t of hits) {
-      try {
-        main = await wikipediaArticle(t, 28000);
-        break;
-      } catch {
-        /* next */
+    // Search clean subject name first (searching subject + full angle sentence often returns 0 MediaWiki hits)
+    const queries = [...new Set([spec.subject, spec.wikipedia, `${spec.subject} company`].map((s) => String(s || '').trim()).filter(Boolean))];
+    for (const q of queries) {
+      if (main) break;
+      const hits = await searchTitles(q, 5).catch(() => []);
+      for (const t of hits) {
+        if (directCandidates.includes(t)) continue;
+        try {
+          main = await wikipediaArticle(t, 28000);
+          break;
+        } catch (e) {
+          lastErr = e;
+        }
       }
     }
   }
-  if (!main) throw new Error(`Could not find a Wikipedia article for "${spec.subject}"`);
+  if (!main) {
+    const reason = lastErr?.status ? ` (Wikipedia responded ${lastErr.status})` : lastErr?.message && !/not found/i.test(lastErr.message) ? ` (${lastErr.message})` : '';
+    throw new Error(`Could not find a Wikipedia article for "${spec.subject}"${reason}`);
+  }
   const extra = [];
   const related = await searchTitles(`${spec.subject} ${spec.angle || ''} ${(spec.episodes || []).slice(0, 2).join(' ')}`.slice(0, 200), 5).catch(() => []);
   for (const t of related) {

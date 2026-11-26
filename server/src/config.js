@@ -158,7 +158,7 @@ export const config = {
   corsOrigins: env.CORS_ORIGINS
     ? env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
     : DEFAULT_CORS_ORIGINS,
-  userAgent: env.BIZSIM_USER_AGENT || 'BIZSIM/1.6 (open-source business research)',
+  userAgent: env.BIZSIM_USER_AGENT || 'BIZSIM/1.7 (https://github.com/kmmohaimenulhaque-code/BIZSIM.tm; open-source business research)',
   trustProxy: parseTrustProxy(env.TRUST_PROXY),
   adminToken: env.BIZSIM_ADMIN_TOKEN || '',
   publicAiToken: env.BIZSIM_PUBLIC_AI_TOKEN || '',

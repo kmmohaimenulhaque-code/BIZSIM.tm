@@ -207,7 +207,10 @@ export async function fetchSafeText(rawUrl, opts = {}) {
 
   const reqHeaders = { ...headers };
   if (!Object.keys(reqHeaders).some((k) => k.toLowerCase() === 'user-agent')) {
-    reqHeaders['User-Agent'] = 'BIZSIM/1.7 (open-source business research)';
+    reqHeaders['User-Agent'] = 'BIZSIM/1.7 (https://github.com/kmmohaimenulhaque-code/BIZSIM.tm; open-source business research)';
+  }
+  if (!Object.keys(reqHeaders).some((k) => k.toLowerCase() === 'accept-encoding')) {
+    reqHeaders['Accept-Encoding'] = 'gzip, deflate, br';
   }
   if (payload !== undefined && !Object.keys(reqHeaders).some((k) => k.toLowerCase() === 'content-length')) {
     reqHeaders['Content-Length'] = String(Buffer.byteLength(payload));
