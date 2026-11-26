@@ -8,25 +8,20 @@ Play real business history as **seasons of four episodes, each made of two or mo
 
 No accounts. No tracking. Your progress stays on your devices.
 
-**Version 1.7.4** · Windows · macOS · Linux · Android · iPhone/iPad · Web
+Windows · macOS · Linux · Android · iPhone/iPad · Web
 
-### New in 1.7.4
+### Highlights
 
 - **15 interface languages plus English (UK)**: English (US), English (UK), বাংলা, Español, Português (Brasil), Français, العربية, हिन्दी, 简体中文, 日本語, Deutsch, Русский, Bahasa Indonesia, Türkçe, 한국어, اردو. Choose in Settings → Language; switching is instant and never touches your progress. Right-to-left layout for Arabic and Urdu.
 - AI-written seasons (live research, chat builder) are written in your language.
 - All translations are **machine-assisted and not yet reviewed** by native speakers. Built-in seasons are English, apart from a one-season sample in Bengali and Spanish. See [docs/I18N.md](docs/I18N.md).
-
-Full notes: [docs/RELEASE-NOTES-1.7.md](docs/RELEASE-NOTES-1.7.md).
-
-### New in 1.6.0
-
 - **Share a season or a single episode** as a `.bizsim` file or QR codes, including seasons from live research and the chat builder. Imports are checked, previewed and never overwrite anything without asking. See [docs/PACKAGE-FORMAT.md](docs/PACKAGE-FORMAT.md).
 - **Notifications, off until you turn them on**: Case of the Day, resume reminders, a weekly goal, season and research completion, your own reminders. Quiet hours, per-category switches, an inbox. Scheduled on the device, no account.
-- **Case of the Day**, **collections and bookmarks**, **replay and compare** attempts, a **PDF report** with your reflection, and the **homepage image back**.
+- **Case of the Day**, **collections and bookmarks**, **replay and compare** attempts, a **PDF report** with your reflection.
 - **Trust labels**: every season shows whether it is documented history, a scriptural narrative, a live scenario or a counterfactual, whether AI wrote it, and the evidence status of each outcome.
-- **Security hardening**: new Wi-Fi pairing (one-time codes, signed requests, replay protection, device list), encrypted AI keys over Wi-Fi, protection against other websites, validated imports and backups, Electron 45. See [docs/SECURITY.md](docs/SECURITY.md).
+- **Security hardening**: Wi-Fi pairing (one-time codes, signed requests, replay protection), encrypted AI keys over Wi-Fi, validated imports and backups. See [docs/SECURITY.md](docs/SECURITY.md).
 
-Full notes: [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
+Release notes: [docs/RELEASE-NOTES-1.7.md](docs/RELEASE-NOTES-1.7.md) · [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
 
 ## What you get
 
@@ -43,18 +38,18 @@ Full notes: [docs/RELEASE-NOTES-1.6.md](docs/RELEASE-NOTES-1.6.md).
 
 ## Download
 
-Get installers and checksums from the **[v1.7.4 release page](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4)** (Assets list on that page).
+**[Download the latest release →](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases)**
 
-| Platform | Get files from | Notes |
-|---|---|---|
-| **Windows 10/11** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | Windows Setup `.exe` in Assets. Unsigned: on the blue SmartScreen box click *More info → Run anyway*. Choose *just for me / all users* and the install folder. Allow the firewall prompt only if you want phone access. |
-| **macOS (Apple Silicon M1–M4)** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | `.zip` / `.dmg` / `.pkg` in Assets. Unzip and put `BIZSIM.app` anywhere (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged: `xattr -cr /path/to/BIZSIM.app`. |
-| **macOS (Intel)** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | Same as Apple Silicon; use the Intel (`x64`) builds from Assets. |
-| **Linux** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | AppImage or `.tar.gz` in Assets. AppImage: `chmod +x` then run. `.tar.gz`: extract and run `./bizsim`. |
-| **Android 6+** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) | `.apk` in Assets. Allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps progress. |
-| **iPhone / iPad** | [v1.7.4 release](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) · Xcode project in repo (`ios/`) | Unsigned `.ipa` in Assets (Sideloadly/AltStore), or build with Xcode on a Mac. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
+Open the newest release and pick the asset for your platform from **Assets** (Windows Setup, macOS zip/dmg/pkg, Linux AppImage or tar.gz, Android APK, iOS ipa, plus `SHA256SUMS.txt`).
 
-All platforms, checksums (`SHA256SUMS.txt`), and source archives: **[Releases · v1.7.4](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4)**.
+| Platform | Notes |
+|---|---|
+| **Windows 10/11** | Setup `.exe` in Assets. Unsigned: on the blue SmartScreen box click *More info → Run anyway*. Choose *just for me / all users* and the install folder. Allow the firewall prompt only if you want phone access. |
+| **macOS (Apple Silicon)** | `.zip` / `.dmg` / `.pkg` in Assets. Put `BIZSIM.app` anywhere (Applications is usual). First launch: right-click → *Open* → *Open*. If macOS says it is damaged: `xattr -cr /path/to/BIZSIM.app`. |
+| **macOS (Intel)** | Same steps; use the Intel (`x64`) builds from Assets. |
+| **Linux** | AppImage: `chmod +x` then run. Or extract the `.tar.gz` and run `./bizsim`. |
+| **Android 6+** | `.apk` in Assets. Allow *Install unknown apps* for your browser/files app. Installs over earlier versions and keeps progress. |
+| **iPhone / iPad** | Unsigned `.ipa` in Assets (Sideloadly/AltStore), or build with Xcode from `ios/` on a Mac. **Instant option:** open BIZSIM in Safari → Share → *Add to Home Screen*. |
 
 ## Setup instructions (desktop env file)
 
@@ -85,7 +80,7 @@ npm run mobile:ios
 npx cap open ios                             # macOS + Xcode
 ```
 
-**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS [.ipa](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases/tag/v1.7.4) on free runners, push a tag such as `v1.7.4` or run it manually, then download from the run’s *Artifacts*. For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
+**GitHub Actions** (`.github/workflows/build.yml`) builds Windows, macOS, Linux, Android and an unsigned iOS `.ipa` on free runners. Push a version tag or run the workflow manually, then download from the run’s *Artifacts* or from [Releases](https://github.com/kmmohaimenulhaque-code/BIZSIM.tm/releases). For a stable Android signing key, add repository secrets `ANDROID_KEYSTORE_B64` (base64 of the `.jks`) and `ANDROID_KEYSTORE_PASSWORD`.
 
 **Public website production checklist** (see [docs/SECURITY.md](docs/SECURITY.md) for full details):
 
@@ -97,14 +92,14 @@ npx cap open ios                             # macOS + Xcode
 
 ## Data folder (desktop)
 
-- **Storage locations** → *Data folder* → *Change…*. BIZSIM copies your progress, saved seasons, keys and voice cache to the new folder and restarts. *Use default folder* moves it back. Defaults: `%APPDATA%\\bizsim` (Windows), `~/Library/Application Support/bizsim` (macOS), `~/.config/bizsim` (Linux).
+- **Storage locations** → *Data folder* → *Change…*. BIZSIM copies your progress, saved seasons, keys and voice cache to the new folder and restarts. *Use default folder* moves it back. Defaults: `%APPDATA%\bizsim` (Windows), `~/Library/Application Support/bizsim` (macOS), `~/.config/bizsim` (Linux).
 - **Downloads** (images, exported files), *Ask where to save each file*, or *Always save to a folder I choose*.
 
 ## AI keys
 
 **Easiest:** open **Settings → AI keys**, paste a key, press **Add key**. Free options: Google Gemini (<https://aistudio.google.com/apikey>, text and images), NVIDIA NIM (<https://build.nvidia.com/settings/api-keys>, keys start with `nvapi-`) and Groq (<https://console.groq.com/keys>). Add several and BIZSIM falls back between them automatically; the default order is Anthropic, OpenAI, Gemini, NVIDIA, Groq, xAI, OpenRouter, custom, and you can reorder it. For US-company financials, enter your name and email under *SEC EDGAR* (the SEC requires it; no key).
 
-**Alternative (files):** copy `.env.example` to `.env` (server) or to `bizsim.env` in the app data folder (the default one, or the folder you chose in Settings), `~/.config/bizsim/` (Linux), `~/Library/Application Support/bizsim/` (macOS), `%APPDATA%\\bizsim\\` (Windows). Priority: keys from the device → keys saved in Settings → settings file.
+**Alternative (files):** copy `.env.example` to `.env` (server) or to `bizsim.env` in the app data folder (the default one, or the folder you chose in Settings), `~/.config/bizsim/` (Linux), `~/Library/Application Support/bizsim/` (macOS), `%APPDATA%\bizsim\` (Windows). Priority: keys from the device → keys saved in Settings → settings file.
 
 ## Architecture (short)
 
